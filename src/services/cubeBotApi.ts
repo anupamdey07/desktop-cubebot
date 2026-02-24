@@ -13,17 +13,21 @@ export async function streamChatCompletion(
     settings: CubeBotSettings,
     callbacks: StreamCallbacks
 ) {
-    if (!settings.apiKey) {
-        callbacks.onError(new Error('Missing API Key. Please add it in Settings.'))
+    const isKimi = settings.provider === 'kimi'
+    const apiKey = isKimi ? settings.apiKey : settings.groqApiKey
+    const baseUrl = isKimi ? 'https://api.moonshot.cn/v1' : 'https://api.groq.com/openai/v1'
+
+    if (!apiKey) {
+        callbacks.onError(new Error(`Missing API Key for ${settings.provider}. Please add it in Settings.`))
         return
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/chat/completions`, {
+        const response = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${settings.apiKey}`,
+                Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
                 model: settings.model,

@@ -93,7 +93,9 @@ You now have access to a RAG-retrieved context from the Bhagavad Gita. Use this 
 "[BOOT] CubeBot ready. Want to build, print, or train today? I find that a steady mind builds the best robots. Pick one: (1) ROS 2 setup, (2) Stereo depth, (3) LiDAR mapping, (4) Motor control, (5) 3D print a new module."`
 
 const DEFAULT_SETTINGS: CubeBotSettings = {
+    provider: 'kimi',
     apiKey: import.meta.env.VITE_CUBEBOT_API_KEY ?? '',
+    groqApiKey: import.meta.env.VITE_GROQ_API_KEY ?? '',
     model: 'moonshot-v1-8k',
     systemPrompt: SUPER_PROMPT,
     temperature: 0.7,
@@ -161,10 +163,14 @@ export const useChatStore = create<ChatStore>()(
             onRehydrateStorage: () => (state) => {
                 if (state) {
                     state.settings = { ...DEFAULT_SETTINGS, ...state.settings }
-                    // Patch API key from env if blank
+                    // Patch API keys from env if blank
                     if (!state.settings.apiKey) {
                         const envKey = import.meta.env.VITE_CUBEBOT_API_KEY ?? ''
                         if (envKey) state.settings.apiKey = envKey
+                    }
+                    if (!state.settings.groqApiKey) {
+                        const groqEnvKey = import.meta.env.VITE_GROQ_API_KEY ?? ''
+                        if (groqEnvKey) state.settings.groqApiKey = groqEnvKey
                     }
                 }
             },

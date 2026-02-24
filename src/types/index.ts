@@ -12,8 +12,12 @@ export interface BotState {
     eyeTarget: { x: number; y: number }
 }
 
+export type AIProvider = 'kimi' | 'groq'
+
 export interface CubeBotSettings {
-    apiKey: string
+    provider: AIProvider
+    apiKey: string          // Kimi Key
+    groqApiKey: string      // Groq Key
     model: string
     systemPrompt: string
     temperature: number

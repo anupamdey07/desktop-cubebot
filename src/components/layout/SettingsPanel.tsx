@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, X, Trash2, Key, Bot, Sliders, Volume2, Mic, Zap } from 'lucide-react'
+import { Cpu, Settings as SettingsIcon, X, Trash2, Key, Bot, Sliders, Volume2, Mic, Zap } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
 import {
     VOICE_PRESETS,
@@ -10,11 +10,19 @@ import {
     preloadVoices,
 } from '../../services/voiceService'
 
-const MODELS = [
-    { value: 'moonshot-v1-8k', label: 'CubeBot v1 · 8K context' },
-    { value: 'moonshot-v1-32k', label: 'CubeBot v1 · 32K context' },
-    { value: 'moonshot-v1-128k', label: 'CubeBot v1 · 128K context' },
-]
+const PROVIDER_MODELS = {
+    kimi: [
+        { value: 'moonshot-v1-8k', label: 'Kimi v1 · 8K context' },
+        { value: 'moonshot-v1-32k', label: 'Kimi v1 · 32K context' },
+        { value: 'moonshot-v1-128k', label: 'Kimi v1 · 128K context' },
+    ],
+    groq: [
+        { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 · 70B (Fast)' },
+        { value: 'llama3-70b-8192', label: 'Llama 3 · 70B' },
+        { value: 'llama3-8b-8192', label: 'Llama 3 · 8B (Instant)' },
+        { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
+    ]
+}
 
 export function SettingsPanel() {
     const [open, setOpen] = useState(false)
@@ -66,7 +74,7 @@ export function SettingsPanel() {
                 className="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:border-indigo-200 transition-colors duration-200"
                 title="Settings"
             >
-                <Settings size={16} />
+                <SettingsIcon size={16} />
             </button>
 
             <AnimatePresence>
@@ -101,24 +109,56 @@ export function SettingsPanel() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                                {/* Provider Selection */}
+                                <section>
+                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
+                                        <Cpu size={11} />
+                                        AI Provider
+                                    </label>
+                                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                        {(['kimi', 'groq'] as const).map((p) => (
+                                            <button
+                                                key={p}
+                                                onClick={() => {
+                                                    const defaultModel = PROVIDER_MODELS[p][0].value
+                                                    updateSettings({ provider: p, model: defaultModel })
+                                                }}
+                                                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${settings.provider === p
+                                                    ? 'bg-white text-indigo-600 shadow-sm'
+                                                    : 'text-slate-500 hover:text-slate-700'
+                                                    }`}
+                                            >
+                                                {p === 'kimi' ? 'Moonshot (Kimi)' : 'Groq (Ultra-Fast)'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+
                                 {/* API Key */}
                                 <section>
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
                                         <Key size={11} />
-                                        API Key
+                                        {settings.provider === 'kimi' ? 'Kimi API Key' : 'Groq API Key'}
                                     </label>
                                     <input
                                         type="password"
-                                        value={settings.apiKey}
-                                        onChange={(e) => updateSettings({ apiKey: e.target.value })}
+                                        value={settings.provider === 'kimi' ? settings.apiKey : settings.groqApiKey}
+                                        onChange={(e) => {
+                                            if (settings.provider === 'kimi') {
+                                                updateSettings({ apiKey: e.target.value })
+                                            } else {
+                                                updateSettings({ groqApiKey: e.target.value })
+                                            }
+                                        }}
                                         placeholder="sk-..."
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
                                     />
                                     <p className="text-[11px] text-slate-400 mt-1.5">
-                                        Get yours at{' '}
-                                        <a href="https://platform.moonshot.cn" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">
-                                            platform.moonshot.cn
-                                        </a>
+                                        {settings.provider === 'kimi' ? (
+                                            <>Get at <a href="https://platform.moonshot.cn" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">platform.moonshot.cn</a></>
+                                        ) : (
+                                            <>Get at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">console.groq.com</a></>
+                                        )}
                                     </p>
                                 </section>
 
@@ -133,7 +173,7 @@ export function SettingsPanel() {
                                         onChange={(e) => updateSettings({ model: e.target.value })}
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-300 transition-all appearance-none cursor-pointer"
                                     >
-                                        {MODELS.map((m) => (
+                                        {PROVIDER_MODELS[settings.provider].map((m) => (
                                             <option key={m.value} value={m.value}>{m.label}</option>
                                         ))}
                                     </select>
