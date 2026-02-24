@@ -101,8 +101,8 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     // Voice defaults — cartoon robot preset
     voiceEnabled: true,
     voiceName: 'Aaron (en-US)',
-    voicePitch: 1.5,      // high = cartoon
-    voiceRate: 1.15,      // snappy
+    voicePitch: 1.0,      // natural
+    voiceRate: 0.95,      // steady delivery
     sttLang: 'en-US',
     isUnhinged: false,
 }
