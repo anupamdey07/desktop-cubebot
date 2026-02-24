@@ -1,6 +1,8 @@
 import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Clock, Bot } from 'lucide-react'
+import { User, Clock, Bot, Volume2 } from 'lucide-react'
+import { useChatStore } from '../../store/useChatStore'
+import { speakWithMood } from '../../services/voiceService'
 import type { Message } from '../../types'
 
 interface ChatMessageProps {
@@ -13,6 +15,7 @@ function formatTime(date: Date) {
 }
 
 export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
+    const { settings } = useChatStore()
     const isUser = message.role === 'user'
 
     return (
@@ -38,17 +41,27 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
 
             {/* Bubble */}
             <div
-                className={`max-w-[85%] rounded-xl px-2.5 py-1.5 text-[10.5px] leading-relaxed ${isUser
+                className={`group relative max-w-[85%] rounded-xl px-2.5 py-1.5 text-[10.5px] leading-relaxed ${isUser
                     ? 'bg-gradient-to-br from-cubebot-600 to-cubebot-700 text-white rounded-br-sm'
                     : 'bg-white text-slate-700 border border-slate-100 rounded-bl-sm shadow-sm'
                     } ${isStreaming ? 'typing-cursor' : ''}`}
             >
                 <p className="whitespace-pre-wrap break-words">{message.content}</p>
                 <div
-                    className={`text-[9px] mt-1.5 ${isUser ? 'text-cubebot-200/60 text-right' : 'text-slate-500'
+                    className={`flex items-center gap-2 text-[9px] mt-1.5 ${isUser ? 'text-cubebot-200/60 justify-end' : 'text-slate-500'
                         }`}
                 >
                     {formatTime(message.timestamp)}
+
+                    {!isUser && !isStreaming && (
+                        <button
+                            onClick={() => speakWithMood(message.content, settings)}
+                            className="p-1 rounded-md hover:bg-slate-100 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 duration-200"
+                            title="Read aloud"
+                        >
+                            <Volume2 size={10} className="text-cubebot-400" />
+                        </button>
+                    )}
                 </div>
             </div>
         </motion.div>
