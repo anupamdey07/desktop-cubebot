@@ -100,7 +100,7 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     maxTokens: 2048,
     // Voice defaults — cartoon robot preset
     voiceEnabled: true,
-    voiceName: '',        // auto-pick best available
+    voiceName: 'Aaron (en-US)',
     voicePitch: 1.5,      // high = cartoon
     voiceRate: 1.15,      // snappy
     sttLang: 'en-US',

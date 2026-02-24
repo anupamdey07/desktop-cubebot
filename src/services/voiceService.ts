@@ -243,8 +243,12 @@ function resolveVoice(voiceName: string): SpeechSynthesisVoice | null {
 
     // User-selected specific voice
     if (voiceName) {
-        const match = voices.find((v) => v.name === voiceName)
-        if (match) return match
+        const exactMatch = voices.find((v) => v.name === voiceName)
+        if (exactMatch) return exactMatch
+
+        // Try fuzzy match (e.g. "Aaron" matches "Aaron (en-US)")
+        const fuzzyMatch = voices.find((v) => v.name.toLowerCase().includes(voiceName.toLowerCase()))
+        if (fuzzyMatch) return fuzzyMatch
     }
 
     // Auto-pick: prefer voices that pitch-shift well
