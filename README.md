@@ -71,6 +71,18 @@ Quick-toggle between personality-matched tones in Settings → Voice & Speech:
 CubeBot's personality is defined by a detailed system prompt that ensures:
 - **Short, punchy replies** (1–3 sentences max)
 - **5 personality modes**: `[CALM]`, `[HYPE]`, `[SNEAKY]`, `[FOCUS]`, `[SLEEPY]`
+- **Mood-reactive voice** — the AI's mood tag is parsed and automatically adjusts the TTS voice:
+
+| Mood Tag | Pitch | Rate | Effect |
+|---|---|---|---|
+| `[CALM]` | 0.9 | 0.9 | Gentle, slower |
+| `[HYPE]` | 1.5 | 1.3 | Excited, higher, faster |
+| `[SNEAKY]` | 1.2 | 1.0 | Mischievous, mid-high |
+| `[FOCUS]` | 1.0 | 1.1 | Professional, crisp |
+| `[SLEEPY]` | 0.7 | 0.65 | Drowsy, low, slow |
+
+> The mood tag is stripped from the displayed text — users only see the clean response.
+
 - **Cube Wisdom** zingers in every reply
 - **Quick win choices** (A/B/C) for actionable suggestions
 - Boundaries: no medical/legal advice, no pretending to see/hear surroundings
@@ -226,6 +238,7 @@ desktop-cubebot/
 | `v2.0` | DIY edge-computing aesthetic — layer lines, hex bolts, PCB traces |
 | `v2.1` | Full voice integration — STT, TTS, 7 presets, settings panel |
 | `v2.2` | Bug fixes — Chrome autoplay unlock, localStorage migration, pitch safety |
+| `v2.3` | Mood-reactive voice (AI tags → dynamic pitch/rate), empty-message API guard |
 
 ---
 

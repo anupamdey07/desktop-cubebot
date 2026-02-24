@@ -29,7 +29,9 @@ export async function streamChatCompletion(
                 model: settings.model,
                 messages: [
                     { role: 'system', content: settings.systemPrompt },
-                    ...messages.map((m) => ({ role: m.role, content: m.content })),
+                    ...messages
+                        .filter((m) => m.content.trim().length > 0) // drop empty placeholders
+                        .map((m) => ({ role: m.role, content: m.content })),
                 ],
                 temperature: settings.temperature,
                 max_tokens: settings.maxTokens,

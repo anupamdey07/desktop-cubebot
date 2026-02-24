@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { useChatStore } from '../store/useChatStore'
 import { streamChatCompletion } from '../services/cubeBotApi'
-import { speak, stopSpeaking } from '../services/voiceService'
+import { speakWithMood, stopSpeaking, parseMoodTag } from '../services/voiceService'
 
 export function useCubeBotChat() {
     const {
@@ -46,20 +46,27 @@ export function useCubeBotChat() {
                             firstToken = false
                         }
                         fullContent += token
-                        updateLastMessage(fullContent)
+                        // Strip mood tag from displayed text (e.g. "[HYPE] Great!" → "Great!")
+                        const { cleanText } = parseMoodTag(fullContent)
+                        updateLastMessage(cleanText)
                     },
                     onComplete: () => {
                         setStreaming(false)
-                        setBotStatus('idle')
                         abortControllerRef.current = null
 
-                        // If voice is enabled, peak the response
+                        // Final clean of mood tag from display
+                        const { cleanText } = parseMoodTag(fullContent)
+                        updateLastMessage(cleanText)
+
+                        // If voice is enabled, speak with mood-matched voice
                         if (settings.voiceEnabled && fullContent) {
-                            speak(fullContent, settings, {
+                            speakWithMood(fullContent, settings, {
                                 onStart: () => setBotStatus('speaking'),
                                 onEnd: () => setBotStatus('idle'),
                                 onError: () => setBotStatus('idle')
                             })
+                        } else {
+                            setBotStatus('idle')
                         }
                     },
                     onError: (err: Error) => {

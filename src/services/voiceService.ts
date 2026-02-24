@@ -73,6 +73,57 @@ export const VOICE_PRESETS: VoicePreset[] = [
     },
 ]
 
+// ─── Mood Tag → Voice Mapping ────────────────────────────────────────────────
+// The super prompt makes CubeBot start replies with [CALM], [HYPE], etc.
+// We parse that tag, strip it from the display text, and use a matching voice.
+
+export const MOOD_VOICE_MAP: Record<string, { pitch: number; rate: number }> = {
+    CALM: { pitch: 0.9, rate: 0.9 },  // gentle, slower
+    HYPE: { pitch: 1.5, rate: 1.3 },  // excited, higher, faster
+    SNEAKY: { pitch: 1.2, rate: 1.0 },  // mischievous, mid-high
+    FOCUS: { pitch: 1.0, rate: 1.1 },  // professional, crisp
+    SLEEPY: { pitch: 0.7, rate: 0.65 },  // drowsy, low, slow
+}
+
+/**
+ * Parse a mood tag like "[HYPE]" from the start of bot output.
+ * Returns the tag name and the cleaned text (without the tag).
+ */
+export function parseMoodTag(text: string): { mood: string | null; cleanText: string } {
+    const match = text.match(/^\s*\[([A-Z]+)\]\s*/)
+    if (match && match[1] in MOOD_VOICE_MAP) {
+        return {
+            mood: match[1],
+            cleanText: text.slice(match[0].length),
+        }
+    }
+    return { mood: null, cleanText: text }
+}
+
+/**
+ * Speak text with dynamic mood-based voice.
+ * If the text starts with [HYPE], [CALM], etc., it uses the matching voice preset.
+ * Otherwise falls back to the user's configured settings.
+ */
+export function speakWithMood(
+    text: string,
+    settings: Pick<CubeBotSettings, 'voiceName' | 'voicePitch' | 'voiceRate'>,
+    options: SpeakOptions = {}
+) {
+    const { mood, cleanText } = parseMoodTag(text)
+
+    if (mood && MOOD_VOICE_MAP[mood]) {
+        const moodVoice = MOOD_VOICE_MAP[mood]
+        speak(cleanText, {
+            voiceName: settings.voiceName,
+            voicePitch: moodVoice.pitch,
+            voiceRate: moodVoice.rate,
+        }, options)
+    } else {
+        speak(cleanText, settings, options)
+    }
+}
+
 // ─── Chrome autoplay unlock ───────────────────────────────────────────────────
 // Chrome blocks speechSynthesis.speak() unless it's been triggered by a user
 // gesture at least once. We fire a silent 0-volume utterance on first interaction.
