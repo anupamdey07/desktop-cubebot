@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, StopCircle, Mic, MicOff, Volume2 } from 'lucide-react'
 import {
@@ -11,6 +11,7 @@ import {
     preloadVoices,
     unlockSpeech,
 } from '../../services/voiceService'
+import { useChatStore } from '../../store/useChatStore'
 
 interface ChatInputProps {
     onSend: (text: string) => void
@@ -23,11 +24,23 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
     const [text, setText] = useState('')
     const [isListening, setIsListening] = useState(false)
     const [isSpeakingNow, setIsSpeakingNow] = useState(false)
+    const [autoSendCountdown, setAutoSendCountdown] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const autoSendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const voiceEnabled = useChatStore((s) => s.settings.voiceEnabled)
 
     const canSend = text.trim().length > 0 && !isStreaming && !disabled
     const hasVoice = isSTTSupported()
     const hasTTS = isTTSSupported()
+
+    // Cancel auto-send if user manually edits text
+    const cancelAutoSend = useCallback(() => {
+        if (autoSendTimerRef.current) {
+            clearTimeout(autoSendTimerRef.current)
+            autoSendTimerRef.current = null
+        }
+        setAutoSendCountdown(false)
+    }, [])
 
     // Preload voices on mount
     useEffect(() => {
@@ -68,6 +81,7 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
         if (isListening) {
             stopListening()
             setIsListening(false)
+            cancelAutoSend()
             return
         }
 
@@ -76,8 +90,21 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
         setIsListening(true)
         startListening({
             onResult: (transcript) => {
-                setText((prev) => (prev ? prev + ' ' + transcript : transcript))
+                const newText = transcript.trim()
+                setText(newText)
                 setIsListening(false)
+
+                // Auto-send after 1s if voice toggle is on
+                if (voiceEnabled && newText) {
+                    setAutoSendCountdown(true)
+                    autoSendTimerRef.current = setTimeout(() => {
+                        onSend(newText)
+                        setText('')
+                        setAutoSendCountdown(false)
+                        autoSendTimerRef.current = null
+                        if (textareaRef.current) textareaRef.current.style.height = 'auto'
+                    }, 1000)
+                }
             },
             onEnd: () => {
                 setIsListening(false)
@@ -85,6 +112,7 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
             onError: (err) => {
                 console.warn('STT error:', err)
                 setIsListening(false)
+                cancelAutoSend()
             },
         })
     }
@@ -115,10 +143,10 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
             <textarea
                 ref={textareaRef}
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => { cancelAutoSend(); setText(e.target.value) }}
                 onKeyDown={handleKeyDown}
                 onInput={handleInput}
-                placeholder={isListening ? 'Listening…' : 'Message CubeBot…'}
+                placeholder={autoSendCountdown ? 'Sending…' : isListening ? 'Listening…' : 'Message CubeBot…'}
                 disabled={disabled || isListening}
                 rows={1}
                 className="flex-1 bg-transparent resize-none border-0 outline-none text-sm text-slate-700 placeholder-slate-400 py-2 leading-relaxed max-h-28 font-sans"
