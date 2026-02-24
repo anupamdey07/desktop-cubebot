@@ -1,0 +1,22 @@
+{
+    "short_name": "CubeBot",
+    "name": "Desktop CubeBot",
+    "icons": [
+        {
+            "src": "/cubebot-icon.svg",
+            "type": "image/svg+xml",
+            "sizes": "192x192"
+        },
+        {
+            "src": "/cubebot-icon.svg",
+            "type": "image/svg+xml",
+            "sizes": "512x512"
+        }
+    ],
+    "start_url": "/",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#6366f1",
+    "description": "Desktop CubeBot — your intelligent AI companion"
+}
