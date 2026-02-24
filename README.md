@@ -73,15 +73,22 @@ CubeBot's personality is defined by a detailed system prompt that ensures:
 - **5 personality modes**: `[CALM]`, `[HYPE]`, `[SNEAKY]`, `[FOCUS]`, `[SLEEPY]`
 - **Mood-reactive voice** — the AI's mood tag is parsed and automatically adjusts the TTS voice:
 
-| Mood Tag | Pitch | Rate | Effect |
-|---|---|---|---|
-| `[CALM]` | 0.9 | 0.9 | Gentle, slower |
-| `[HYPE]` | 1.5 | 1.3 | Excited, higher, faster |
-| `[SNEAKY]` | 1.2 | 1.0 | Mischievous, mid-high |
-| `[FOCUS]` | 1.0 | 1.1 | Professional, crisp |
-| `[SLEEPY]` | 0.7 | 0.65 | Drowsy, low, slow |
+| Mood Tag | Pitch | Rate | Effect | Core Emotion |
+|---|---|---|---|---|
+| `[CALM]` | 0.9 | 0.9 | Gentle, reassure | CALM |
+| `[HYPE]` | 1.8 | 1.3 | Excited, high | HYPE |
+| `[SNEAKY]` | 1.2 | 1.0 | Mischievous | SNEAKY |
+| `[FOCUS]` | 1.0 | 1.1 | Professional | FOCUS |
+| `[SLEEPY]` | 0.7 | 0.65 | Drowsy, slow | SLEEPY |
+| `[BOOT]` | 1.8 | 1.3 | Startup energy | HYPE |
+| `[SENSOR]` | 1.0 | 1.1 | Diagnostics | FOCUS |
+| `[QUEST]` | 1.2 | 1.0 | Adventurous | SNEAKY |
+| `[TEACH]` | 0.9 | 0.9 | Patient mentor | CALM |
+| `[WARN]` | 1.0 | 1.1 | Serious safety | FOCUS |
 
-> The mood tag is stripped from the displayed text — users only see the clean response.
+> The mood tag is ALWAYS stripped from the displayed text — users only see the clean response.
+
+- **Auto-send after voice** — when voice is enabled, the bot automatically sends the transcribed text after a 1s delay (user can cancel by editing).
 
 - **Cube Wisdom** zingers in every reply
 - **Quick win choices** (A/B/C) for actionable suggestions
@@ -239,6 +246,7 @@ desktop-cubebot/
 | `v2.1` | Full voice integration — STT, TTS, 7 presets, settings panel |
 | `v2.2` | Bug fixes — Chrome autoplay unlock, localStorage migration, pitch safety |
 | `v2.3` | Mood-reactive voice (AI tags → dynamic pitch/rate), empty-message API guard |
+| `v2.4` | New Super Prompt (Robotics Guide), expanded 10-tag mood voice, auto-send after voice |
 
 ---
 

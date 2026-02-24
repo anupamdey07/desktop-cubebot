@@ -1,7 +1,9 @@
 import { useRef, useCallback } from 'react'
 import { useChatStore } from '../store/useChatStore'
 import { streamChatCompletion } from '../services/cubeBotApi'
+import { searchGita, mockEmbedQuery } from '../services/ragService'
 import { speakWithMood, stopSpeaking, parseMoodTag } from '../services/voiceService'
+import type { Message } from '../types'
 
 export function useCubeBotChat() {
     const {
@@ -23,6 +25,14 @@ export function useCubeBotChat() {
             // Stop any current speaking before starting a new turn
             stopSpeaking()
 
+            // 1. RAG Search — Find relevant Gita verse
+            // (Real implementation would use a real embedding API here)
+            const queryVector = mockEmbedQuery(userText)
+            const gitaHits = await searchGita(queryVector, 1)
+            const contextMsg = gitaHits.length > 0
+                ? `[GITA CONTEXT]: Reference Verse ${gitaHits[0].verse_ref}: "${gitaHits[0].content}" | Sanskrit: ${gitaHits[0].sanskrit}`
+                : ""
+
             // Add user message
             const userMsg = addMessage({ role: 'user', content: userText })
 
@@ -36,8 +46,20 @@ export function useCubeBotChat() {
             let fullContent = ''
             let firstToken = true
 
+            // Inject GITA context into the conversation (invisible to user via filter in api call)
+            const messagesWithContext: Message[] = [
+                ...messages,
+                {
+                    id: `rag_${Date.now()}`,
+                    role: 'system',
+                    content: contextMsg,
+                    timestamp: new Date()
+                },
+                userMsg
+            ]
+
             await streamChatCompletion(
-                [...messages, userMsg],
+                messagesWithContext,
                 settings,
                 {
                     onMessage: (token: string) => {
