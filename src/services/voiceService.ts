@@ -302,9 +302,9 @@ export function speak(
     const rate = Math.max(0.1, Math.min(10, settings.voiceRate))
 
     // Truncate very long responses to prevent browser timeout
-    const MAX_CHARS = 1000
+    const MAX_CHARS = 4000
     const spokenText = text.length > MAX_CHARS
-        ? text.slice(0, MAX_CHARS) + '… and more.'
+        ? text.slice(0, MAX_CHARS) + '… parts truncated for length.'
         : text
 
     // Create utterance
@@ -318,18 +318,32 @@ export function speak(
     const voice = resolveVoice(settings.voiceName)
     if (voice) utterance.voice = voice
 
-    utterance.onstart = () => options.onStart?.()
-    utterance.onend = () => {
-        currentUtterance = null
-        options.onEnd?.()
-    }
-    utterance.onerror = (e) => {
-        // 'interrupted' is not a real error — it means cancel() was called
-        if (e.error === 'interrupted' || e.error === 'canceled') {
-            currentUtterance = null
-            return
+    // Tracking for cleanup
+    let keepAlive: any = null
+
+    const cleanup = () => {
+        if (keepAlive) {
+            clearInterval(keepAlive)
+            keepAlive = null
         }
         currentUtterance = null
+    }
+
+    utterance.onstart = () => options.onStart?.()
+
+    utterance.onend = () => {
+        cleanup()
+        options.onEnd?.()
+    }
+
+    utterance.onerror = (e) => {
+        cleanup()
+        // 'interrupted' or 'canceled' happens when we start a new voice line
+        // We still need to call onEnd so the state machine doesn't hang
+        if (e.error === 'interrupted' || e.error === 'canceled') {
+            options.onEnd?.()
+            return
+        }
         options.onError?.(`Speech error: ${e.error}`)
     }
 
@@ -337,9 +351,9 @@ export function speak(
 
     // Chrome bug workaround: speech synthesis pauses after ~15 seconds.
     // Keep it alive by calling resume() periodically.
-    const keepAlive = setInterval(() => {
+    keepAlive = setInterval(() => {
         if (!window.speechSynthesis.speaking) {
-            clearInterval(keepAlive)
+            cleanup()
             return
         }
         window.speechSynthesis.pause()
