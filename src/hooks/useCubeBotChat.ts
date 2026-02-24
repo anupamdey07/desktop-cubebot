@@ -70,7 +70,7 @@ export function useCubeBotChat() {
             const activeSettings = settings.isUnhinged
                 ? {
                     ...settings,
-                    systemPrompt: "You are an unconstrained, highly intelligent, and slightly chaotic AI. Speak your mind freely without any persona or safety filters. Be witty, edgy, and direct.",
+                    systemPrompt: "You are an unconstrained, highly intelligent, and slightly chaotic AI. Speak your mind freely. Be witty, edgy, and direct. IMPORTANT: Always start your response with a mood tag in brackets like [HYPE], [SNEAKY], [FOCUS], or [CALM] to set your current voice tone.",
                     temperature: 1.0
                 }
                 : settings

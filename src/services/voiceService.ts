@@ -98,7 +98,9 @@ export const MOOD_VOICE_MAP: Record<string, { pitch: number; rate: number }> = {
  * Returns the tag name (if recognized) and the cleaned text (tag removed).
  */
 export function parseMoodTag(text: string): { mood: string | null; cleanText: string } {
-    const match = text.match(/^\s*\[([A-Z]+)\]\s*/)
+    // Matches [TAG] or **[TAG]** at the start, allowing for spaces or minor leading punctuation
+    // e.g. " [HYPE]", "**[FOCUS]**", "Okay, [CALM]"
+    const match = text.match(/^\s*(?:\*\*)?\[([A-Z]+)\](?:\*\*)?\s*/)
     if (match) {
         const tag = match[1]
         const cleanText = text.slice(match[0].length)
