@@ -73,6 +73,26 @@ export const VOICE_PRESETS: VoicePreset[] = [
     },
 ]
 
+// ─── Chrome autoplay unlock ───────────────────────────────────────────────────
+// Chrome blocks speechSynthesis.speak() unless it's been triggered by a user
+// gesture at least once. We fire a silent 0-volume utterance on first interaction.
+
+let _speechUnlocked = false
+
+export function unlockSpeech() {
+    if (_speechUnlocked || !('speechSynthesis' in window)) return
+    try {
+        const silent = new SpeechSynthesisUtterance(' ')
+        silent.volume = 0.01 // near-silent but not 0 (some browsers reject 0)
+        silent.pitch = 1     // safe default
+        silent.rate = 1      // safe default
+        window.speechSynthesis.speak(silent)
+        _speechUnlocked = true
+    } catch (e) {
+        console.warn('Could not unlock speech:', e)
+    }
+}
+
 // ─── Speech-to-Text (Listening) ──────────────────────────────────────────────
 
 type ListenCallback = {
@@ -95,6 +115,9 @@ export function startListening(callbacks: ListenCallback, lang = 'en-US') {
         callbacks.onError('Speech recognition not supported in this browser.')
         return
     }
+
+    // Unlock TTS while we have user gesture context
+    unlockSpeech()
 
     recognitionInstance = new SpeechRecognitionCtor()
     recognitionInstance.lang = lang
@@ -143,19 +166,21 @@ export function isTTSSupported(): boolean {
  * Get all available voices, filtered to English by default.
  */
 export function getAvailableVoices(englishOnly = true): SpeechSynthesisVoice[] {
+    if (!isTTSSupported()) return []
     const voices = window.speechSynthesis.getVoices()
     if (!englishOnly) return voices
     return voices.filter((v) => v.lang.startsWith('en'))
 }
 
 /**
- * Pick a voice by name, or auto-select the best one.
+ * Pick a voice by name, or auto-select the best one for pitch-shifting.
  */
 function resolveVoice(voiceName: string): SpeechSynthesisVoice | null {
+    if (!isTTSSupported()) return null
     const voices = window.speechSynthesis.getVoices()
     if (voices.length === 0) return null
 
-    // If user picked a specific voice
+    // User-selected specific voice
     if (voiceName) {
         const match = voices.find((v) => v.name === voiceName)
         if (match) return match
@@ -163,13 +188,13 @@ function resolveVoice(voiceName: string): SpeechSynthesisVoice | null {
 
     // Auto-pick: prefer voices that pitch-shift well
     const preferred = [
-        'Samantha',          // macOS / iOS — clean
-        'Karen',             // macOS — Australian, fun pitched up
-        'Moira',             // macOS — Irish
-        'Tessa',             // macOS — South African
-        'Google US English', // Chrome
+        'Samantha',          // macOS / iOS — cleanest for pitch shifting
+        'Karen',             // macOS Australian
+        'Moira',             // macOS Irish
+        'Tessa',             // macOS South African
+        'Google US English', // Chrome desktop
         'Microsoft Zira',    // Windows
-        'Daniel',            // macOS — British
+        'Daniel',            // macOS British
     ]
 
     for (const name of preferred) {
@@ -178,8 +203,7 @@ function resolveVoice(voiceName: string): SpeechSynthesisVoice | null {
     }
 
     // Fallback to first English voice
-    const englishVoice = voices.find((v) => v.lang.startsWith('en'))
-    return englishVoice || voices[0]
+    return voices.find((v) => v.lang.startsWith('en')) || voices[0]
 }
 
 interface SpeakOptions {
@@ -189,7 +213,9 @@ interface SpeakOptions {
 }
 
 /**
- * Speak text using settings from the store.
+ * Speak text with CubeBot's voice settings.
+ * IMPORTANT: Chrome requires this to ultimately originate from a user gesture.
+ * Call unlockSpeech() once on first user interaction to warm up the context.
  */
 export function speak(
     text: string,
@@ -204,15 +230,24 @@ export function speak(
     // Cancel any ongoing speech
     window.speechSynthesis.cancel()
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    currentUtterance = utterance
+    // Clamp to valid ranges per MDN spec
+    const pitch = Math.max(0, Math.min(2, settings.voicePitch))
+    const rate = Math.max(0.1, Math.min(10, settings.voiceRate))
 
-    // Apply settings
-    utterance.pitch = Math.max(0, Math.min(2, settings.voicePitch))
-    utterance.rate = Math.max(0.1, Math.min(2, settings.voiceRate))
+    // Truncate very long responses to prevent browser timeout
+    const MAX_CHARS = 1000
+    const spokenText = text.length > MAX_CHARS
+        ? text.slice(0, MAX_CHARS) + '… and more.'
+        : text
+
+    // Create utterance
+    const utterance = new SpeechSynthesisUtterance(spokenText)
+    currentUtterance = utterance
+    utterance.pitch = pitch
+    utterance.rate = rate
     utterance.volume = 1.0
 
-    // Pick voice
+    // Pick voice (may return null if voices not loaded yet)
     const voice = resolveVoice(settings.voiceName)
     if (voice) utterance.voice = voice
 
@@ -222,11 +257,27 @@ export function speak(
         options.onEnd?.()
     }
     utterance.onerror = (e) => {
+        // 'interrupted' is not a real error — it means cancel() was called
+        if (e.error === 'interrupted' || e.error === 'canceled') {
+            currentUtterance = null
+            return
+        }
         currentUtterance = null
         options.onError?.(`Speech error: ${e.error}`)
     }
 
     window.speechSynthesis.speak(utterance)
+
+    // Chrome bug workaround: speech synthesis pauses after ~15 seconds.
+    // Keep it alive by calling resume() periodically.
+    const keepAlive = setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+            clearInterval(keepAlive)
+            return
+        }
+        window.speechSynthesis.pause()
+        window.speechSynthesis.resume()
+    }, 10000)
 }
 
 export function stopSpeaking() {
@@ -235,24 +286,27 @@ export function stopSpeaking() {
 }
 
 export function isSpeaking(): boolean {
-    return window.speechSynthesis.speaking
+    return 'speechSynthesis' in window && window.speechSynthesis.speaking
 }
 
 /**
- * Ensure voices are loaded (async in some browsers).
+ * Ensure voices are loaded (they load async in Chrome via onvoiceschanged).
  * Call once on app init.
  */
 export function preloadVoices(): Promise<SpeechSynthesisVoice[]> {
+    if (!isTTSSupported()) return Promise.resolve([])
+
     return new Promise((resolve) => {
         const voices = window.speechSynthesis.getVoices()
         if (voices.length > 0) {
             resolve(voices)
             return
         }
+        // Chrome fires voiceschanged event when voices load
         window.speechSynthesis.onvoiceschanged = () => {
             resolve(window.speechSynthesis.getVoices())
         }
-        // Timeout fallback
+        // Timeout fallback for browsers without the event
         setTimeout(() => resolve(window.speechSynthesis.getVoices()), 2000)
     })
 }

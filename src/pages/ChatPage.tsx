@@ -1,14 +1,17 @@
-import { useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useCallback, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Volume2, VolumeX } from 'lucide-react'
 import { ComputerBot } from '../components/bot/CubeBot'
 import { ChatInput } from '../components/chat/ChatInput'
 import { SettingsPanel } from '../components/layout/SettingsPanel'
 import { useChatStore } from '../store/useChatStore'
 import { useCubeBotChat } from '../hooks/useCubeBotChat'
+import { unlockSpeech, isTTSSupported, stopSpeaking } from '../services/voiceService'
 
 export function ChatPage() {
-    const { messages, isStreaming, setEyeTarget } = useChatStore()
+    const { messages, isStreaming, settings, updateSettings, setEyeTarget } = useChatStore()
     const { send, stop } = useCubeBotChat()
+    const [showVoiceToast, setShowVoiceToast] = useState(false)
 
     // Eye tracking — normalize cursor position to -1..1 from center
     const handleMouseMove = useCallback(
@@ -27,6 +30,24 @@ export function ChatPage() {
         return () => window.removeEventListener('mousemove', handleMouseMove)
     }, [handleMouseMove])
 
+    // ── Voice toggle — this is a direct user click, so Chrome allows TTS ──
+    const handleVoiceToggle = () => {
+        const next = !settings.voiceEnabled
+        updateSettings({ voiceEnabled: next })
+
+        if (next) {
+            // IMPORTANT: unlockSpeech() here runs inside a user click handler,
+            // which satisfies Chrome's autoplay gesture requirement for TTS
+            unlockSpeech()
+        } else {
+            stopSpeaking()
+        }
+
+        // Show brief toast
+        setShowVoiceToast(true)
+        setTimeout(() => setShowVoiceToast(false), 1800)
+    }
+
     return (
         <div className="min-h-screen bg-white flex flex-col items-center justify-start pt-8 pb-6 px-4">
             {/* Subtle page background dots */}
@@ -39,10 +60,38 @@ export function ChatPage() {
                 }}
             />
 
-            {/* Top-right settings */}
-            <div className="fixed top-4 right-4 z-50">
+            {/* Top-right controls */}
+            <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+                {/* Voice toggle — gives Chrome the user gesture it needs */}
+                {isTTSSupported() && (
+                    <motion.button
+                        onClick={handleVoiceToggle}
+                        whileTap={{ scale: 0.88 }}
+                        title={settings.voiceEnabled ? 'Mute voice' : 'Enable voice'}
+                        className={`w-9 h-9 rounded-xl border shadow-sm flex items-center justify-center transition-all duration-200 ${settings.voiceEnabled
+                                ? 'bg-green-50 border-green-200 text-green-500 hover:bg-green-100'
+                                : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300'
+                            }`}
+                    >
+                        {settings.voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                    </motion.button>
+                )}
                 <SettingsPanel />
             </div>
+
+            {/* Voice on/off toast */}
+            <AnimatePresence>
+                {showVoiceToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                        className="fixed top-16 right-4 z-50 px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-medium shadow-lg"
+                    >
+                        {settings.voiceEnabled ? '🔊 Voice on' : '🔇 Voice off'}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Header */}
             <motion.div

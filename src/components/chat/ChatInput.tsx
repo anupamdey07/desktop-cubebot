@@ -9,6 +9,7 @@ import {
     stopSpeaking,
     isSpeaking as checkSpeaking,
     preloadVoices,
+    unlockSpeech,
 } from '../../services/voiceService'
 
 interface ChatInputProps {
@@ -70,6 +71,8 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
             return
         }
 
+        // unlockSpeech() here — direct user click = Chrome autoplay gesture
+        unlockSpeech()
         setIsListening(true)
         startListening({
             onResult: (transcript) => {
@@ -98,8 +101,8 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
                 <motion.button
                     onClick={handleMicToggle}
                     className={`mb-0.5 w-9 h-9 rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${isListening
-                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 border border-slate-200'
+                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 border border-slate-200'
                         }`}
                     whileTap={{ scale: 0.9 }}
                     title={isListening ? 'Stop listening' : 'Voice input'}

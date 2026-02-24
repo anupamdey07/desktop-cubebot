@@ -8,7 +8,6 @@ import {
     isSTTSupported,
     speak,
     preloadVoices,
-    getAvailableVoices,
 } from '../../services/voiceService'
 
 const MODELS = [
@@ -23,10 +22,16 @@ export function SettingsPanel() {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
     const [activePreset, setActivePreset] = useState('cartoon-robot')
 
-    // Load available voices
+    // Load available voices safely (guard against missing speechSynthesis)
     useEffect(() => {
-        if (!open) return
-        preloadVoices().then((v) => setVoices(v.filter((voice) => voice.lang.startsWith('en'))))
+        if (!open || !isTTSSupported()) return
+        try {
+            preloadVoices().then((v) => {
+                setVoices(v.filter((voice) => voice.lang.startsWith('en')))
+            }).catch(console.warn)
+        } catch (e) {
+            console.warn('Voice loading failed:', e)
+        }
     }, [open])
 
     // Detect which preset matches current settings
@@ -172,8 +177,8 @@ export function SettingsPanel() {
                                                     key={p.id}
                                                     onClick={() => applyPreset(p.id)}
                                                     className={`px-2.5 py-2 rounded-lg text-left transition-all text-[11px] border ${activePreset === p.id
-                                                            ? 'bg-green-50 border-green-300 text-green-700'
-                                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
+                                                        ? 'bg-green-50 border-green-300 text-green-700'
+                                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
                                                         }`}
                                                 >
                                                     <span className="text-sm mr-1">{p.emoji}</span>

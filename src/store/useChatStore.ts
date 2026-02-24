@@ -97,11 +97,17 @@ export const useChatStore = create<ChatStore>()(
                 messages: state.messages,
                 settings: state.settings,
             }),
-            // If localStorage has a blank key, patch it from env
+            // Merge DEFAULT_SETTINGS into rehydrated state so new fields
+            // (like voice settings) always have valid defaults even if
+            // the user's localStorage was saved before those fields existed.
             onRehydrateStorage: () => (state) => {
-                if (state && !state.settings.apiKey) {
-                    const envKey = import.meta.env.VITE_CUBEBOT_API_KEY ?? ''
-                    if (envKey) state.settings = { ...state.settings, apiKey: envKey }
+                if (state) {
+                    state.settings = { ...DEFAULT_SETTINGS, ...state.settings }
+                    // Patch API key from env if blank
+                    if (!state.settings.apiKey) {
+                        const envKey = import.meta.env.VITE_CUBEBOT_API_KEY ?? ''
+                        if (envKey) state.settings.apiKey = envKey
+                    }
                 }
             },
         }
