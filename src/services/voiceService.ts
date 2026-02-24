@@ -78,23 +78,33 @@ export const VOICE_PRESETS: VoicePreset[] = [
 // We parse that tag, strip it from the display text, and use a matching voice.
 
 export const MOOD_VOICE_MAP: Record<string, { pitch: number; rate: number }> = {
-    CALM: { pitch: 0.9, rate: 0.9 },  // gentle, slower
-    HYPE: { pitch: 1.5, rate: 1.3 },  // excited, higher, faster
-    SNEAKY: { pitch: 1.2, rate: 1.0 },  // mischievous, mid-high
+    // ── Core 5 emotions (the REAL voice tones) ──
+    CALM: { pitch: 0.9, rate: 0.9 },  // gentle, reassuring
+    HYPE: { pitch: 1.8, rate: 1.3 },  // excited, celebratory — cranked up!
+    SNEAKY: { pitch: 1.2, rate: 1.0 },  // mischievous, playful
     FOCUS: { pitch: 1.0, rate: 1.1 },  // professional, crisp
-    SLEEPY: { pitch: 0.7, rate: 0.65 },  // drowsy, low, slow
+    SLEEPY: { pitch: 0.7, rate: 0.65 },  // drowsy, winding down
+    // ── Context aliases (map to closest core emotion) ──
+    BOOT: { pitch: 1.8, rate: 1.3 },  // → HYPE (startup energy)
+    SENSOR: { pitch: 1.0, rate: 1.1 },  // → FOCUS (data/diagnostics)
+    QUEST: { pitch: 1.2, rate: 1.0 },  // → SNEAKY (adventure)
+    TEACH: { pitch: 0.9, rate: 0.9 },  // → CALM (patient instructor)
+    WARN: { pitch: 1.0, rate: 1.1 },  // → FOCUS (serious safety)
 }
 
 /**
  * Parse a mood tag like "[HYPE]" from the start of bot output.
- * Returns the tag name and the cleaned text (without the tag).
+ * ALWAYS strips the tag from displayed text, even if it's not in MOOD_VOICE_MAP.
+ * Returns the tag name (if recognized) and the cleaned text (tag removed).
  */
 export function parseMoodTag(text: string): { mood: string | null; cleanText: string } {
     const match = text.match(/^\s*\[([A-Z]+)\]\s*/)
-    if (match && match[1] in MOOD_VOICE_MAP) {
+    if (match) {
+        const tag = match[1]
+        const cleanText = text.slice(match[0].length)
         return {
-            mood: match[1],
-            cleanText: text.slice(match[0].length),
+            mood: tag in MOOD_VOICE_MAP ? tag : null,
+            cleanText,  // tag is ALWAYS stripped regardless
         }
     }
     return { mood: null, cleanText: text }
