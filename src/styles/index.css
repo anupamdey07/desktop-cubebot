@@ -29,49 +29,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(80, 140, 70, 0.4);
     border-radius: 9999px;
   }
 }
 
 @layer components {
 
-  /* Monitor shell */
-  .monitor-shell {
-    background: linear-gradient(160deg, #f0f0f5 0%, #e4e4ef 100%);
-    border: 2px solid #c7c7d9;
-    box-shadow:
-      0 2px 0 #b5b5cc,
-      0 4px 0 #a8a8be,
-      0 6px 18px rgba(99, 102, 241, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  }
-
-  /* Screen bezel inside monitor */
-  .monitor-screen {
-    background: linear-gradient(160deg, #f7f7fc 0%, #eeeef8 100%);
-    border: 2px solid #d0d0e8;
-    box-shadow: inset 0 2px 8px rgba(99, 102, 241, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-  }
-
-  /* Eye camera module housing */
-  .eye-module {
-    background: linear-gradient(135deg, #2d2d4a, #1a1a2e);
-    border: 1.5px solid #3d3d5c;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  }
-
-  /* Circular mouth display */
-  .mouth-display {
-    background: radial-gradient(circle at 35% 35%, #2a2a3e, #0f0f1a);
-    border: 3px solid #e4e4ef;
-    box-shadow:
-      0 3px 0 #c7c7d9,
-      0 0 0 4px #f0f0f5,
-      0 6px 16px rgba(0, 0, 0, 0.12);
-  }
-
-  /* Chat bubbles light theme */
+  /* Chat bubbles (light theme for outer area) */
   .bubble-user {
     background: linear-gradient(135deg, #6366f1, #7c3aed);
     color: white;
@@ -88,13 +53,13 @@
   /* Input area */
   .input-shell {
     background: white;
-    border: 1.5px solid #e0e0f0;
-    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08);
+    border: 1.5px solid #d0ddc8;
+    box-shadow: 0 2px 12px rgba(80, 140, 70, 0.08);
   }
 }
 
-/* Typing cursor */
-@keyframes cursor-blink {
+/* LCD cursor blink */
+@keyframes lcd-blink {
 
   0%,
   49% {
@@ -107,12 +72,12 @@
   }
 }
 
-.typing-cursor::after {
+.lcd-cursor::after {
   content: '▋';
   display: inline-block;
   margin-left: 1px;
-  animation: cursor-blink 0.7s step-start infinite;
-  color: #6366f1;
+  animation: lcd-blink 0.6s step-start infinite;
+  color: #4ade80;
   font-size: 0.85em;
 }
 
@@ -130,9 +95,9 @@
 }
 
 .mouth-bar {
-  animation: mouth-bar 0.35s ease-in-out infinite;
+  animation: mouth-bar 0.32s ease-in-out infinite;
   transform-origin: bottom;
-  border-radius: 2px;
+  border-radius: 1px;
 }
 
 .mouth-bar:nth-child(1) {
@@ -140,69 +105,33 @@
 }
 
 .mouth-bar:nth-child(2) {
-  animation-delay: 0.08s;
+  animation-delay: 0.07s;
 }
 
 .mouth-bar:nth-child(3) {
-  animation-delay: 0.16s;
+  animation-delay: 0.14s;
 }
 
 .mouth-bar:nth-child(4) {
-  animation-delay: 0.24s;
+  animation-delay: 0.21s;
 }
 
 .mouth-bar:nth-child(5) {
-  animation-delay: 0.12s;
+  animation-delay: 0.1s;
 }
 
 .mouth-bar:nth-child(6) {
-  animation-delay: 0.04s;
+  animation-delay: 0.03s;
 }
 
 .mouth-bar:nth-child(7) {
-  animation-delay: 0.2s;
+  animation-delay: 0.18s;
 }
 
-/* Eye blink keyframe */
-@keyframes eye-blink {
-
-  0%,
-  88%,
-  100% {
-    transform: scaleY(1);
-  }
-
-  92% {
-    transform: scaleY(0.08);
-  }
+.mouth-bar:nth-child(8) {
+  animation-delay: 0.08s;
 }
 
-/* Monitor stand wobble on load */
-@keyframes float-gentle {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-/* Scan line effect on monitor screen */
-.screen-scanlines {
-  background: repeating-linear-gradient(0deg,
-      transparent,
-      transparent 3px,
-      rgba(99, 102, 241, 0.018) 3px,
-      rgba(99, 102, 241, 0.018) 4px);
-  pointer-events: none;
-}
-
-/* Camera stalk stem */
-.eye-stalk {
-  width: 4px;
-  background: linear-gradient(to bottom, #2d2d4a, #4a4a6a);
-  border-radius: 2px;
+.mouth-bar:nth-child(9) {
+  animation-delay: 0.15s;
 }

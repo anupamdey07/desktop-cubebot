@@ -3,321 +3,370 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useChatStore } from '../../store/useChatStore'
 import type { Message } from '../../types'
 
-// ─── Eye Camera Module ────────────────────────────────────────────────────────
-interface EyeProps {
+// ─── Eye Lens (blue stereocam embedded in cube face) ──────────────────────────
+interface EyeLensProps {
     targetX: number
     targetY: number
     isSpeaking: boolean
-    blinkDelay?: number
+    blinkDelay: number
 }
 
-function EyeCam({ targetX, targetY, isSpeaking, blinkDelay = 0 }: EyeProps) {
-    const maxLook = 3.5
-    const pupilX = Math.max(-maxLook, Math.min(maxLook, targetX * maxLook))
-    const pupilY = Math.max(-maxLook, Math.min(maxLook, targetY * maxLook))
+function EyeLens({ targetX, targetY, isSpeaking, blinkDelay }: EyeLensProps) {
+    const pupilX = targetX * 2.5
+    const pupilY = targetY * 2.5
 
     return (
-        <div className="flex flex-col items-center gap-0">
-            {/* Stalk / arm */}
-            <div className="eye-stalk h-5" />
-            {/* Camera housing */}
-            <div className="eye-module rounded-xl w-10 h-10 flex items-center justify-center relative overflow-hidden">
-                {/* Lens barrel ring */}
-                <div className="absolute inset-1 rounded-[8px] border border-white/5 bg-black/40" />
-                {/* Iris */}
+        <motion.div
+            className="w-10 h-10 rounded-full relative"
+            style={{
+                background: 'radial-gradient(circle at 35% 35%, #1a1a2e, #0a0a14)',
+                border: '2.5px solid #2a2a3a',
+                boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.3)',
+            }}
+            animate={{ scaleY: [1, 1, 1, 0.1, 1] }}
+            transition={{
+                duration: 4,
+                repeat: Infinity,
+                delay: blinkDelay,
+                times: [0, 0.92, 0.93, 0.96, 1],
+            }}
+        >
+            {/* Blue iris ring */}
+            <div
+                className="absolute inset-1 rounded-full"
+                style={{
+                    background: 'radial-gradient(circle at 40% 40%, #4488ff, #2255bb 60%, #112244)',
+                    boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.4)',
+                }}
+            />
+            {/* Pupil */}
+            <motion.div
+                className="absolute w-3 h-3 rounded-full"
+                style={{
+                    background: 'radial-gradient(circle at 35% 35%, #111, #000)',
+                    top: '50%',
+                    left: '50%',
+                    marginTop: -6,
+                    marginLeft: -6,
+                }}
+                animate={{ x: pupilX, y: pupilY }}
+                transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+            >
+                {/* Highlight dot */}
+                <div className="w-1 h-1 bg-white/80 rounded-full absolute top-0.5 left-0.5" />
+            </motion.div>
+            {/* Speaking glow */}
+            {isSpeaking && (
                 <motion.div
-                    className="relative w-6 h-6 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-600 flex items-center justify-center overflow-hidden"
-                    animate={{ scaleY: [1, 1, 0.06, 1] }}
-                    transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        repeatDelay: 2,
-                        delay: blinkDelay,
-                        times: [0, 0.9, 0.93, 1],
-                        ease: 'easeInOut',
-                    }}
-                >
-                    {/* Pupil */}
-                    <motion.div
-                        className="w-3 h-3 rounded-full bg-cubebot-400 relative flex items-center justify-center"
-                        animate={{ x: pupilX, y: pupilY }}
-                        transition={{ type: 'spring', stiffness: 180, damping: 18 }}
-                    >
-                        {/* Highlight */}
-                        <div className="absolute top-0.5 left-0.5 w-1 h-1 rounded-full bg-white/90" />
-                    </motion.div>
-                    {/* Speaking iris glow */}
-                    {isSpeaking && (
-                        <motion.div
-                            className="absolute inset-0 rounded-full bg-cubebot-400/30"
-                            animate={{ opacity: [0.3, 0.8, 0.3] }}
-                            transition={{ duration: 0.5, repeat: Infinity }}
-                        />
-                    )}
-                </motion.div>
-                {/* LED indicator dot */}
-                <motion.div
-                    className="absolute top-1 right-1 w-1 h-1 rounded-full"
-                    animate={
-                        isSpeaking
-                            ? { backgroundColor: ['#22c55e', '#86efac', '#22c55e'] }
-                            : { backgroundColor: '#ef4444', opacity: [1, 0.5, 1] }
-                    }
-                    transition={{ duration: isSpeaking ? 0.6 : 1.5, repeat: Infinity }}
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: 'radial-gradient(circle, rgba(68,136,255,0.3), transparent)' }}
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 0.6, repeat: Infinity }}
                 />
+            )}
+        </motion.div>
+    )
+}
+
+// ─── LCD Waveform Display ─────────────────────────────────────────────────────
+interface LCDDisplayProps {
+    status: string
+    isPetting: boolean
+}
+
+function LCDDisplay({ status, isPetting }: LCDDisplayProps) {
+    if (isPetting) {
+        return (
+            <div className="flex items-center justify-center h-full gap-1">
+                <motion.span
+                    className="text-lg"
+                    animate={{ scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] }}
+                    transition={{ duration: 0.4, repeat: 2 }}
+                >
+                    💚
+                </motion.span>
+                <span className="text-green-400 text-xs font-mono">happy!</span>
             </div>
-        </div>
-    )
-}
+        )
+    }
 
-// ─── Circular Mouth Display ───────────────────────────────────────────────────
-function MouthDisplay({ status }: { status: 'idle' | 'thinking' | 'speaking' | 'error' }) {
+    if (status === 'speaking') {
+        return (
+            <div className="flex items-end justify-center gap-[3px] h-full pb-2">
+                {Array.from({ length: 9 }).map((_, i) => (
+                    <div
+                        key={i}
+                        className="mouth-bar bg-green-400"
+                        style={{
+                            width: 4,
+                            height: '100%',
+                            maxHeight: 28,
+                            animationDelay: `${i * 0.06}s`,
+                        }}
+                    />
+                ))}
+            </div>
+        )
+    }
+
+    if (status === 'thinking') {
+        return (
+            <div className="flex items-center justify-center h-full gap-2">
+                {[0, 0.2, 0.4].map((d) => (
+                    <motion.div
+                        key={d}
+                        className="w-2 h-2 rounded-full bg-green-400"
+                        animate={{ opacity: [0.2, 1, 0.2] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: d }}
+                    />
+                ))}
+            </div>
+        )
+    }
+
+    if (status === 'error') {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <span className="text-red-400 text-xs font-mono">! ERR</span>
+            </div>
+        )
+    }
+
+    // Idle — flat waveform / heartbeat
     return (
-        <div className="mouth-display rounded-full w-16 h-16 flex items-center justify-center overflow-hidden relative">
-            {/* Screen glare */}
-            <div className="absolute top-1 left-2 w-5 h-2 rounded-full bg-white/8 rotate-[-20deg]" />
-            {/* Scanlines overlay */}
-            <div className="screen-scanlines absolute inset-0 rounded-full" />
-
-            <AnimatePresence mode="wait">
-                {status === 'speaking' && (
-                    <motion.div
-                        key="speaking"
-                        initial={{ opacity: 0, scale: 0.6 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.6 }}
-                        className="flex items-end justify-center gap-0.5 h-7 w-full px-2"
-                    >
-                        {Array.from({ length: 7 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="mouth-bar flex-1 bg-cubebot-400"
-                                style={{ height: '100%' }}
-                            />
-                        ))}
-                    </motion.div>
-                )}
-
-                {status === 'thinking' && (
-                    <motion.div
-                        key="thinking"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex gap-1 items-center"
-                    >
-                        {[0, 0.15, 0.3].map((delay, i) => (
-                            <motion.div
-                                key={i}
-                                className="w-2 h-2 rounded-full bg-purple-400"
-                                animate={{ y: [0, -4, 0], opacity: [0.5, 1, 0.5] }}
-                                transition={{ duration: 0.7, repeat: Infinity, delay }}
-                            />
-                        ))}
-                    </motion.div>
-                )}
-
-                {status === 'idle' && (
-                    <motion.div
-                        key="idle"
-                        initial={{ opacity: 0, scale: 0.7 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.7 }}
-                        className="relative w-9 h-9"
-                    >
-                        {/* Happy arc smile */}
-                        <svg viewBox="0 0 36 36" fill="none" className="w-full h-full">
-                            <path
-                                d="M8 16 Q18 28 28 16"
-                                stroke="#818cf8"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                fill="none"
-                            />
-                            {/* Eyes dots */}
-                            <circle cx="12" cy="12" r="2" fill="#818cf8" />
-                            <circle cx="24" cy="12" r="2" fill="#818cf8" />
-                        </svg>
-                    </motion.div>
-                )}
-
-                {status === 'error' && (
-                    <motion.div
-                        key="error"
-                        initial={{ opacity: 0, rotate: -10 }}
-                        animate={{ opacity: 1, rotate: 0 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        <svg viewBox="0 0 36 36" fill="none" className="w-9 h-9">
-                            <path
-                                d="M8 22 Q18 12 28 22"
-                                stroke="#f87171"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                fill="none"
-                            />
-                            <circle cx="12" cy="13" r="2" fill="#f87171" />
-                            <circle cx="24" cy="13" r="2" fill="#f87171" />
-                        </svg>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+        <div className="flex items-end justify-center gap-[3px] h-full pb-3">
+            {[4, 6, 10, 14, 18, 14, 10, 6, 4].map((h, i) => (
+                <motion.div
+                    key={i}
+                    className="bg-green-500/70 rounded-sm"
+                    style={{ width: 3 }}
+                    animate={{ height: [h, h * 0.6, h] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.15 }}
+                />
+            ))}
         </div>
     )
 }
 
-// ─── Chat inside Screen ───────────────────────────────────────────────────────
+// ─── Chat Screen inside LCD ───────────────────────────────────────────────────
 interface ScreenChatProps {
     messages: Message[]
     isStreaming: boolean
 }
 
-function formatTime(d: Date) {
-    return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
 function ScreenChat({ messages, isStreaming }: ScreenChatProps) {
-    const bottomRef = useRef<HTMLDivElement>(null)
+    const scrollRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+        }
     }, [messages, isStreaming])
 
     if (messages.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-full gap-3 px-3 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                 >
-                    <div className="text-3xl mb-2">👋</div>
-                    <p className="text-indigo-800 text-xs font-semibold">Hi! I'm CubeBot.</p>
-                    <p className="text-slate-500 text-[10px] mt-0.5">Ask me anything below.</p>
+                    <div className="text-2xl mb-1">🔩</div>
+                    <p className="text-green-300 text-[10px] font-mono font-semibold">CUBEBOT v2.0</p>
+                    <p className="text-green-500/60 text-[9px] font-mono mt-0.5">READY FOR INPUT</p>
                 </motion.div>
-                <div className="flex flex-col gap-1.5 w-full mt-1">
-                    {['Explain quantum computing', 'Write a haiku about AI', 'What is RAG?'].map((s) => (
-                        <div
-                            key={s}
-                            className="text-[10px] text-slate-400 px-2 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-center truncate"
-                        >
-                            {s}
-                        </div>
-                    ))}
-                </div>
             </div>
         )
     }
 
     return (
-        <div className="h-full overflow-y-auto px-2.5 py-2 flex flex-col gap-2">
-            <AnimatePresence initial={false}>
-                {messages.map((msg, i) => {
-                    const isUser = msg.role === 'user'
-                    const isLastStreaming = isStreaming && i === messages.length - 1 && !isUser
-                    return (
-                        <motion.div
-                            key={msg.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 space-y-1.5 scroll-smooth">
+            {messages.map((msg, i) => {
+                const isUser = msg.role === 'user'
+                const isLast = i === messages.length - 1
+                return (
+                    <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                    >
+                        <div
+                            className={`max-w-[85%] rounded px-2 py-1 text-[10px] leading-relaxed font-mono ${isUser
+                                    ? 'bg-green-900/40 text-green-300 border border-green-700/40'
+                                    : 'bg-green-950/30 text-green-400 border border-green-800/30'
+                                } ${isLast && isStreaming ? 'lcd-cursor' : ''}`}
                         >
-                            <div
-                                className={`max-w-[85%] rounded-xl px-2.5 py-1.5 text-[10.5px] leading-relaxed ${isUser ? 'bubble-user rounded-br-sm' : 'bubble-bot rounded-bl-sm'
-                                    } ${isLastStreaming ? 'typing-cursor' : ''}`}
-                            >
-                                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                                <p className={`text-[9px] mt-0.5 ${isUser ? 'text-indigo-200/70 text-right' : 'text-slate-400'}`}>
-                                    {formatTime(msg.timestamp)}
-                                </p>
-                            </div>
-                        </motion.div>
-                    )
-                })}
-            </AnimatePresence>
-            <div ref={bottomRef} />
+                            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                        </div>
+                    </motion.div>
+                )
+            })}
         </div>
     )
 }
 
-// ─── Full Computer Caricature ─────────────────────────────────────────────────
-interface ComputerBotProps {
+// ─── Full Cube Robot ──────────────────────────────────────────────────────────
+interface CubeBotProps {
     messages: Message[]
     isStreaming: boolean
 }
 
-export function ComputerBot({ messages, isStreaming }: ComputerBotProps) {
+export function ComputerBot({ messages, isStreaming }: CubeBotProps) {
     const { botState } = useChatStore()
     const { status, eyeTarget } = botState
     const [isPetting, setIsPetting] = useState(false)
 
     return (
         <motion.div
-            className="flex flex-col items-center select-none w-full max-w-[90vw] md:max-w-md"
-            animate={isPetting ? {
-                scale: [1, 1.05, 1],
-                rotate: [0, -2, 2, 0]
-            } : { y: [0, -5, 0] }}
-            transition={isPetting ? { duration: 0.3 } : { duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex flex-col items-center select-none w-full max-w-[92vw] sm:max-w-sm"
+            animate={
+                isPetting
+                    ? { scale: [1, 1.04, 1], rotate: [0, -1.5, 1.5, 0] }
+                    : { y: [0, -3, 0] }
+            }
+            transition={
+                isPetting
+                    ? { duration: 0.35 }
+                    : { duration: 4, repeat: Infinity, ease: 'easeInOut' }
+            }
             onTap={() => {
                 setIsPetting(true)
-                setTimeout(() => setIsPetting(false), 600)
+                setTimeout(() => setIsPetting(false), 700)
             }}
         >
-            {/* ── Eyes (stereocam) mounted on top ─────── */}
-            <div className="flex items-end justify-center gap-6 mb-[-2px] z-10 relative">
-                <EyeCam
-                    targetX={eyeTarget.x}
-                    targetY={eyeTarget.y}
-                    isSpeaking={status === 'speaking'}
-                    blinkDelay={0}
-                />
-                <EyeCam
-                    targetX={eyeTarget.x}
-                    targetY={eyeTarget.y}
-                    isSpeaking={status === 'speaking'}
-                    blinkDelay={0.6}
-                />
+            {/* ── Top Frame Rail + Antenna ──────────────── */}
+            <div className="relative w-full">
+                {/* Antenna */}
+                <div className="absolute -top-8 right-6 flex flex-col items-center z-10">
+                    <div className="w-2 h-2 rounded-full bg-red-400 shadow-md shadow-red-400/40" />
+                    <div
+                        className="w-[2px] h-7"
+                        style={{ background: 'linear-gradient(to bottom, #333, #555)' }}
+                    />
+                </div>
+
+                {/* Top rail with bolts */}
+                <div
+                    className="h-4 rounded-t-lg mx-4 relative"
+                    style={{
+                        background: 'linear-gradient(180deg, #96ab8d 0%, #829c78 100%)',
+                        borderTop: '1px solid #aabfa2',
+                    }}
+                >
+                    {/* Corner bolts */}
+                    <div className="absolute top-0.5 left-1 w-2.5 h-2.5 rounded-full bg-zinc-800 border border-zinc-600 shadow-inner" />
+                    <div className="absolute top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-zinc-800 border border-zinc-600 shadow-inner" />
+                </div>
             </div>
 
-            {/* ── Monitor body ─────────────────────────── */}
-            <div className="monitor-shell rounded-[2.5rem] p-4 w-full aspect-[4/5] md:aspect-square flex flex-col shadow-2xl">
-                {/* Top bezel with brand */}
-                <div className="flex items-center justify-between mb-3 px-2">
-                    <div className="flex gap-1.5">
-                        {['#f87171', '#fbbf24', '#34d399'].map((c) => (
-                            <div key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
-                        ))}
+            {/* ── Main Cube Body ────────────────────────── */}
+            <div
+                className="w-full relative flex flex-col"
+                style={{
+                    background: 'linear-gradient(160deg, #9ab691 0%, #849e7a 50%, #7a9470 100%)',
+                    borderLeft: '3px solid #6d8564',
+                    borderRight: '3px solid #6d8564',
+                    boxShadow:
+                        '4px 4px 0 #5a7350, -1px 0 0 #aabfa2, inset 0 0 20px rgba(0,0,0,0.06)',
+                }}
+            >
+                {/* Black vertical corner pillars */}
+                <div className="absolute top-0 bottom-0 left-0 w-2" style={{ background: 'linear-gradient(90deg, #1a1a1a, #333)' }} />
+                <div className="absolute top-0 bottom-0 right-0 w-2" style={{ background: 'linear-gradient(90deg, #333, #1a1a1a)' }} />
+
+                {/* ── Eyes Row ──────────────────────────────── */}
+                <div className="flex items-center justify-center gap-5 py-3 relative z-10">
+                    <EyeLens
+                        targetX={eyeTarget.x}
+                        targetY={eyeTarget.y}
+                        isSpeaking={status === 'speaking'}
+                        blinkDelay={0}
+                    />
+                    {/* Small screws between eyes */}
+                    <div className="flex flex-col gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-zinc-500 border border-zinc-400" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-zinc-500 border border-zinc-400" />
                     </div>
-                    <span className="text-xs font-display font-bold text-slate-400 tracking-widest uppercase opacity-60">
-                        CubeBot OS v2
-                    </span>
-                    <div className="w-2.5 h-2.5 rounded-full bg-cubebot-400/60 animate-pulse" />
+                    <EyeLens
+                        targetX={eyeTarget.x}
+                        targetY={eyeTarget.y}
+                        isSpeaking={status === 'speaking'}
+                        blinkDelay={0.7}
+                    />
                 </div>
 
-                {/* Screen */}
-                <div className="monitor-screen rounded-2xl overflow-hidden relative flex-1 min-h-0">
-                    <div className="screen-scanlines absolute inset-0 z-10 pointer-events-none" />
-                    <ScreenChat messages={messages} isStreaming={isStreaming} />
-                </div>
-
-                {/* Integrated Mouth Display Area */}
-                <div className="flex flex-col items-center justify-center py-4 gap-2">
-                    <motion.div
-                        animate={isPetting ? { scale: 1.2 } : { scale: 1 }}
-                        className="cursor-pointer"
+                {/* ── LCD Screen Area ────────────────────────── */}
+                <div className="px-5 pb-4 relative z-10">
+                    {/* Screen bezel */}
+                    <div
+                        className="rounded-lg overflow-hidden"
+                        style={{
+                            border: '2.5px solid #3a3a3a',
+                            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1)',
+                        }}
                     >
-                        <MouthDisplay status={status} />
-                    </motion.div>
-                    <div className="w-16 h-1.5 rounded-full bg-slate-300/40" />
+                        {/* LCD Screen */}
+                        <div
+                            className="flex flex-col"
+                            style={{
+                                background: 'linear-gradient(180deg, #0a1a0a 0%, #0d1f0d 50%, #081408 100%)',
+                                minHeight: 180,
+                                maxHeight: '50vh',
+                            }}
+                        >
+                            {/* Scanlines overlay */}
+                            <div
+                                className="absolute inset-0 pointer-events-none z-20 opacity-20"
+                                style={{
+                                    backgroundImage:
+                                        'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.03) 2px, rgba(0,255,0,0.03) 3px)',
+                                }}
+                            />
+
+                            {/* Waveform / Chat content */}
+                            {messages.length > 0 || isStreaming ? (
+                                <ScreenChat messages={messages} isStreaming={isStreaming} />
+                            ) : (
+                                <div className="flex flex-col h-[180px]">
+                                    <div className="flex-1">
+                                        <ScreenChat messages={messages} isStreaming={isStreaming} />
+                                    </div>
+                                    <div className="h-10 border-t border-green-900/40">
+                                        <LCDDisplay status={status} isPetting={isPetting} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Status waveform bar at bottom when chatting */}
+                            {messages.length > 0 && (
+                                <div
+                                    className="h-8 border-t border-green-900/50 flex-shrink-0"
+                                >
+                                    <LCDDisplay status={status} isPetting={isPetting} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* ── Stand neck (slimmed down) ──────────────── */}
-            <div className="flex flex-col items-center -mt-1">
-                <div className="w-8 h-3 bg-gradient-to-b from-slate-300 to-slate-400" />
-                <div className="w-24 h-2.5 rounded-full bg-gradient-to-r from-slate-300 via-slate-100 to-slate-300 border border-slate-200 shadow-sm" />
+            {/* ── Bottom Frame Rail ─────────────────────── */}
+            <div
+                className="h-4 rounded-b-lg mx-4 w-[calc(100%-2rem)] relative"
+                style={{
+                    background: 'linear-gradient(0deg, #7a9470 0%, #8da683 100%)',
+                    borderBottom: '1px solid #6d8564',
+                }}
+            >
+                <div className="absolute bottom-0.5 left-1 w-2.5 h-2.5 rounded-full bg-zinc-800 border border-zinc-600 shadow-inner" />
+                <div className="absolute bottom-0.5 right-1 w-2.5 h-2.5 rounded-full bg-zinc-800 border border-zinc-600 shadow-inner" />
+            </div>
+
+            {/* ── Feet (rubber bumpers) ──────────────────── */}
+            <div className="flex justify-between w-[70%] mt-0.5">
+                <div className="w-3 h-1.5 rounded-b bg-zinc-700" />
+                <div className="w-3 h-1.5 rounded-b bg-zinc-700" />
             </div>
 
             {/* Status pill */}
@@ -325,12 +374,12 @@ export function ComputerBot({ messages, isStreaming }: ComputerBotProps) {
                 key={status}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 px-4 py-1 rounded-full bg-white shadow-sm border border-slate-100 text-xs text-slate-400 font-medium"
+                className="mt-3 px-4 py-1 rounded-full bg-white/90 shadow-sm border border-slate-100 text-xs text-slate-400 font-mono"
             >
-                {status === 'idle' && '● ready'}
-                {status === 'thinking' && '◌ processing…'}
-                {status === 'speaking' && '◉ listening'}
-                {status === 'error' && '✕ error'}
+                {status === 'idle' && '● ONLINE'}
+                {status === 'thinking' && '◌ PROCESSING…'}
+                {status === 'speaking' && '◉ SPEAKING'}
+                {status === 'error' && '✕ ERROR'}
             </motion.div>
         </motion.div>
     )

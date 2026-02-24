@@ -59,7 +59,7 @@ export function SettingsPanel() {
                                 <section>
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
                                         <Key size={11} />
-                                        Moonshot API Key
+                                        API Key
                                     </label>
                                     <input
                                         type="password"

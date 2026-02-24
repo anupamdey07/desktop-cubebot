@@ -52,7 +52,7 @@ export function ChatPage() {
                 transition={{ duration: 0.4 }}
             >
                 <h1 className="font-display font-bold text-2xl text-indigo-600 tracking-tight">Desktop CubeBot</h1>
-                <p className="text-slate-400 text-xs">Moonshot AI Companion</p>
+                <p className="text-slate-400 text-xs">Your desk companion</p>
             </motion.div>
 
             {/* Computer Bot — chat rendered inside the screen */}
