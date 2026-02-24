@@ -18,6 +18,12 @@ export interface CubeBotSettings {
     systemPrompt: string
     temperature: number
     maxTokens: number
+    // Voice settings
+    voiceEnabled: boolean   // auto-speak bot responses
+    voiceName: string       // SpeechSynthesisVoice.name ('' = auto-pick)
+    voicePitch: number      // 0 – 2 (default 1.5 for cartoon)
+    voiceRate: number        // 0.1 – 2 (default 1.15 for snappy)
+    sttLang: string         // SpeechRecognition.lang
 }
 
 export interface ChatStore {

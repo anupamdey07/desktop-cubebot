@@ -1,7 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, X, Trash2, Key, Bot, Sliders } from 'lucide-react'
+import { Settings, X, Trash2, Key, Bot, Sliders, Volume2, Mic } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
+import {
+    VOICE_PRESETS,
+    isTTSSupported,
+    isSTTSupported,
+    speak,
+    preloadVoices,
+    getAvailableVoices,
+} from '../../services/voiceService'
 
 const MODELS = [
     { value: 'moonshot-v1-8k', label: 'CubeBot v1 · 8K context' },
@@ -12,6 +20,39 @@ const MODELS = [
 export function SettingsPanel() {
     const [open, setOpen] = useState(false)
     const { settings, updateSettings, clearHistory } = useChatStore()
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+    const [activePreset, setActivePreset] = useState('cartoon-robot')
+
+    // Load available voices
+    useEffect(() => {
+        if (!open) return
+        preloadVoices().then((v) => setVoices(v.filter((voice) => voice.lang.startsWith('en'))))
+    }, [open])
+
+    // Detect which preset matches current settings
+    useEffect(() => {
+        const match = VOICE_PRESETS.find(
+            (p) => p.id !== 'custom' && p.pitch === settings.voicePitch && p.rate === settings.voiceRate
+        )
+        setActivePreset(match?.id || 'custom')
+    }, [settings.voicePitch, settings.voiceRate])
+
+    const applyPreset = (presetId: string) => {
+        const preset = VOICE_PRESETS.find((p) => p.id === presetId)
+        if (!preset || presetId === 'custom') {
+            setActivePreset('custom')
+            return
+        }
+        setActivePreset(presetId)
+        updateSettings({ voicePitch: preset.pitch, voiceRate: preset.rate })
+    }
+
+    const testVoice = () => {
+        speak(
+            "Hey! I'm CubeBot, your sassy desk companion. Spin to win!",
+            { voiceName: settings.voiceName, voicePitch: settings.voicePitch, voiceRate: settings.voiceRate }
+        )
+    }
 
     return (
         <>
@@ -93,46 +134,201 @@ export function SettingsPanel() {
                                     </select>
                                 </section>
 
-                                {/* System Prompt */}
-                                <section>
-                                    <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wide">
-                                        Super Prompt
-                                    </label>
-                                    <textarea
-                                        value={settings.systemPrompt}
-                                        onChange={(e) => updateSettings({ systemPrompt: e.target.value })}
-                                        rows={5}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-300 transition-all resize-none leading-relaxed"
-                                    />
-                                    <p className="text-[11px] text-slate-400 mt-1">Define CubeBot's personality.</p>
-                                </section>
+                                {/* ─── VOICE & SPEECH ───────────────────── */}
+                                <div className="border-t border-slate-100 pt-4">
+                                    <h3 className="flex items-center gap-1.5 text-xs font-bold text-slate-600 mb-4 uppercase tracking-wide">
+                                        <Volume2 size={12} className="text-green-500" />
+                                        Voice & Speech
+                                    </h3>
 
-                                {/* Temperature */}
-                                <section>
-                                    <label className="text-xs font-semibold text-slate-500 mb-2 flex justify-between uppercase tracking-wide">
-                                        <span>Temperature</span>
-                                        <span className="text-indigo-500 font-mono normal-case">{settings.temperature.toFixed(1)}</span>
-                                    </label>
-                                    <input type="range" min={0} max={1} step={0.1} value={settings.temperature}
-                                        onChange={(e) => updateSettings({ temperature: parseFloat(e.target.value) })}
-                                        className="w-full accent-indigo-500"
-                                    />
-                                    <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                                        <span>Precise</span><span>Creative</span>
-                                    </div>
-                                </section>
+                                    {/* Auto-speak toggle */}
+                                    <section className="mb-4">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-500">
+                                                Auto-speak responses
+                                            </label>
+                                            <button
+                                                onClick={() => updateSettings({ voiceEnabled: !settings.voiceEnabled })}
+                                                className={`w-10 h-5 rounded-full transition-colors relative ${settings.voiceEnabled ? 'bg-green-500' : 'bg-slate-300'
+                                                    }`}
+                                            >
+                                                <div
+                                                    className={`w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform ${settings.voiceEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                                                        }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1">Read bot replies aloud</p>
+                                    </section>
 
-                                {/* Max Tokens */}
-                                <section>
-                                    <label className="text-xs font-semibold text-slate-500 mb-2 flex justify-between uppercase tracking-wide">
-                                        <span>Max Tokens</span>
-                                        <span className="text-indigo-500 font-mono normal-case">{settings.maxTokens}</span>
-                                    </label>
-                                    <input type="range" min={256} max={8192} step={256} value={settings.maxTokens}
-                                        onChange={(e) => updateSettings({ maxTokens: parseInt(e.target.value) })}
-                                        className="w-full accent-indigo-500"
-                                    />
-                                </section>
+                                    {/* Voice Presets */}
+                                    <section className="mb-4">
+                                        <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wide">
+                                            Voice Preset
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                            {VOICE_PRESETS.map((p) => (
+                                                <button
+                                                    key={p.id}
+                                                    onClick={() => applyPreset(p.id)}
+                                                    className={`px-2.5 py-2 rounded-lg text-left transition-all text-[11px] border ${activePreset === p.id
+                                                            ? 'bg-green-50 border-green-300 text-green-700'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
+                                                        }`}
+                                                >
+                                                    <span className="text-sm mr-1">{p.emoji}</span>
+                                                    <span className="font-medium">{p.label}</span>
+                                                    <p className="text-[9px] text-slate-400 mt-0.5 leading-tight">{p.description}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </section>
+
+                                    {/* System Voice */}
+                                    {voices.length > 0 && (
+                                        <section className="mb-4">
+                                            <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wide">
+                                                System Voice
+                                            </label>
+                                            <select
+                                                value={settings.voiceName}
+                                                onChange={(e) => updateSettings({ voiceName: e.target.value })}
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] text-slate-700 outline-none focus:border-green-300 transition-all appearance-none cursor-pointer"
+                                            >
+                                                <option value="">Auto (best match)</option>
+                                                {voices.map((v) => (
+                                                    <option key={v.name} value={v.name}>
+                                                        {v.name} ({v.lang}){v.localService ? '' : ' ☁️'}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </section>
+                                    )}
+
+                                    {/* Pitch */}
+                                    <section className="mb-3">
+                                        <label className="text-xs font-semibold text-slate-500 mb-2 flex justify-between uppercase tracking-wide">
+                                            <span>Pitch</span>
+                                            <span className="text-green-500 font-mono normal-case">{settings.voicePitch.toFixed(1)}</span>
+                                        </label>
+                                        <input
+                                            type="range" min={0} max={2} step={0.1}
+                                            value={settings.voicePitch}
+                                            onChange={(e) => {
+                                                updateSettings({ voicePitch: parseFloat(e.target.value) })
+                                                setActivePreset('custom')
+                                            }}
+                                            className="w-full accent-green-500"
+                                        />
+                                        <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
+                                            <span>Deep</span><span>Normal</span><span>Chipmunk</span>
+                                        </div>
+                                    </section>
+
+                                    {/* Rate */}
+                                    <section className="mb-3">
+                                        <label className="text-xs font-semibold text-slate-500 mb-2 flex justify-between uppercase tracking-wide">
+                                            <span>Speed</span>
+                                            <span className="text-green-500 font-mono normal-case">{settings.voiceRate.toFixed(2)}</span>
+                                        </label>
+                                        <input
+                                            type="range" min={0.1} max={2} step={0.05}
+                                            value={settings.voiceRate}
+                                            onChange={(e) => {
+                                                updateSettings({ voiceRate: parseFloat(e.target.value) })
+                                                setActivePreset('custom')
+                                            }}
+                                            className="w-full accent-green-500"
+                                        />
+                                        <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
+                                            <span>Slow</span><span>Normal</span><span>Fast</span>
+                                        </div>
+                                    </section>
+
+                                    {/* STT Language */}
+                                    {isSTTSupported() && (
+                                        <section className="mb-3">
+                                            <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
+                                                <Mic size={10} />
+                                                Mic Language
+                                            </label>
+                                            <select
+                                                value={settings.sttLang}
+                                                onChange={(e) => updateSettings({ sttLang: e.target.value })}
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] text-slate-700 outline-none focus:border-green-300 transition-all appearance-none cursor-pointer"
+                                            >
+                                                <option value="en-US">English (US)</option>
+                                                <option value="en-GB">English (UK)</option>
+                                                <option value="de-DE">German</option>
+                                                <option value="es-ES">Spanish</option>
+                                                <option value="fr-FR">French</option>
+                                                <option value="hi-IN">Hindi</option>
+                                                <option value="ja-JP">Japanese</option>
+                                                <option value="zh-CN">Chinese (Mandarin)</option>
+                                                <option value="bn-IN">Bengali</option>
+                                            </select>
+                                        </section>
+                                    )}
+
+                                    {/* Test button */}
+                                    {isTTSSupported() && (
+                                        <button
+                                            onClick={testVoice}
+                                            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-green-50 hover:bg-green-100 border border-green-200 text-green-600 text-xs font-medium transition-colors"
+                                        >
+                                            <Volume2 size={12} />
+                                            Test Voice
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* ─── AI SETTINGS ────────────────────────── */}
+                                <div className="border-t border-slate-100 pt-4">
+                                    <h3 className="text-xs font-bold text-slate-600 mb-4 uppercase tracking-wide">
+                                        AI Settings
+                                    </h3>
+
+                                    {/* System Prompt */}
+                                    <section className="mb-4">
+                                        <label className="text-xs font-semibold text-slate-500 mb-2 block uppercase tracking-wide">
+                                            Super Prompt
+                                        </label>
+                                        <textarea
+                                            value={settings.systemPrompt}
+                                            onChange={(e) => updateSettings({ systemPrompt: e.target.value })}
+                                            rows={5}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-300 transition-all resize-none leading-relaxed"
+                                        />
+                                        <p className="text-[11px] text-slate-400 mt-1">Define CubeBot's personality.</p>
+                                    </section>
+
+                                    {/* Temperature */}
+                                    <section className="mb-3">
+                                        <label className="text-xs font-semibold text-slate-500 mb-2 flex justify-between uppercase tracking-wide">
+                                            <span>Temperature</span>
+                                            <span className="text-indigo-500 font-mono normal-case">{settings.temperature.toFixed(1)}</span>
+                                        </label>
+                                        <input type="range" min={0} max={1} step={0.1} value={settings.temperature}
+                                            onChange={(e) => updateSettings({ temperature: parseFloat(e.target.value) })}
+                                            className="w-full accent-indigo-500"
+                                        />
+                                        <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                                            <span>Precise</span><span>Creative</span>
+                                        </div>
+                                    </section>
+
+                                    {/* Max Tokens */}
+                                    <section>
+                                        <label className="text-xs font-semibold text-slate-500 mb-2 flex justify-between uppercase tracking-wide">
+                                            <span>Max Tokens</span>
+                                            <span className="text-indigo-500 font-mono normal-case">{settings.maxTokens}</span>
+                                        </label>
+                                        <input type="range" min={256} max={8192} step={256} value={settings.maxTokens}
+                                            onChange={(e) => updateSettings({ maxTokens: parseInt(e.target.value) })}
+                                            className="w-full accent-indigo-500"
+                                        />
+                                    </section>
+                                </div>
                             </div>
 
                             <div className="px-5 py-4 border-t border-slate-100 flex flex-col gap-2">

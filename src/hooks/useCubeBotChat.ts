@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { useChatStore } from '../store/useChatStore'
 import { streamChatCompletion } from '../services/cubeBotApi'
+import { speak, stopSpeaking } from '../services/voiceService'
 
 export function useCubeBotChat() {
     const {
@@ -18,6 +19,9 @@ export function useCubeBotChat() {
     const send = useCallback(
         async (userText: string) => {
             if (isStreaming) return
+
+            // Stop any current speaking before starting a new turn
+            stopSpeaking()
 
             // Add user message
             const userMsg = addMessage({ role: 'user', content: userText })
@@ -48,6 +52,15 @@ export function useCubeBotChat() {
                         setStreaming(false)
                         setBotStatus('idle')
                         abortControllerRef.current = null
+
+                        // If voice is enabled, peak the response
+                        if (settings.voiceEnabled && fullContent) {
+                            speak(fullContent, settings, {
+                                onStart: () => setBotStatus('speaking'),
+                                onEnd: () => setBotStatus('idle'),
+                                onError: () => setBotStatus('idle')
+                            })
+                        }
                     },
                     onError: (err: Error) => {
                         updateLastMessage(`⚠️ ${err.message}`)
@@ -67,6 +80,7 @@ export function useCubeBotChat() {
         if (abortControllerRef.current) {
             abortControllerRef.current.abort()
         }
+        stopSpeaking()
         setStreaming(false)
         setBotStatus('idle')
     }, [setStreaming, setBotStatus])
