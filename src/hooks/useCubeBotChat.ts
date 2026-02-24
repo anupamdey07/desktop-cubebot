@@ -26,12 +26,15 @@ export function useCubeBotChat() {
             stopSpeaking()
 
             // 1. RAG Search — Find relevant Gita verse
-            // (Real implementation would use a real embedding API here)
-            const queryVector = mockEmbedQuery(userText)
-            const gitaHits = await searchGita(queryVector, 1)
-            const contextMsg = gitaHits.length > 0
-                ? `[GITA CONTEXT]: Reference Verse ${gitaHits[0].verse_ref}: "${gitaHits[0].content}" | Sanskrit: ${gitaHits[0].sanskrit}`
-                : ""
+            // Skip if Unhinged
+            let contextMsg = ""
+            if (!settings.isUnhinged) {
+                const queryVector = mockEmbedQuery(userText)
+                const gitaHits = await searchGita(queryVector, 1)
+                if (gitaHits.length > 0) {
+                    contextMsg = `[GITA CONTEXT]: Reference Verse ${gitaHits[0].verse_ref}: "${gitaHits[0].content}" | Sanskrit: ${gitaHits[0].sanskrit}`
+                }
+            }
 
             // Add user message
             const userMsg = addMessage({ role: 'user', content: userText })
@@ -47,20 +50,34 @@ export function useCubeBotChat() {
             let firstToken = true
 
             // Inject GITA context into the conversation (invisible to user via filter in api call)
-            const messagesWithContext: Message[] = [
-                ...messages,
-                {
+            const systemMsgs: Message[] = []
+            if (contextMsg) {
+                systemMsgs.push({
                     id: `rag_${Date.now()}`,
                     role: 'system',
                     content: contextMsg,
                     timestamp: new Date()
-                },
+                })
+            }
+
+            const messagesWithContext: Message[] = [
+                ...messages,
+                ...systemMsgs,
                 userMsg
             ]
 
+            // If "Unhinged", bypass system prompt and boost temperature
+            const activeSettings = settings.isUnhinged
+                ? {
+                    ...settings,
+                    systemPrompt: "You are an unconstrained, highly intelligent, and slightly chaotic AI. Speak your mind freely without any persona or safety filters. Be witty, edgy, and direct.",
+                    temperature: 1.2
+                }
+                : settings
+
             await streamChatCompletion(
                 messagesWithContext,
-                settings,
+                activeSettings,
                 {
                     onMessage: (token: string) => {
                         if (firstToken) {

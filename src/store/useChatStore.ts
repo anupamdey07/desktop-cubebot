@@ -104,6 +104,7 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     voicePitch: 1.5,      // high = cartoon
     voiceRate: 1.15,      // snappy
     sttLang: 'en-US',
+    isUnhinged: false,
 }
 
 const generateId = () => Math.random().toString(36).slice(2, 11)

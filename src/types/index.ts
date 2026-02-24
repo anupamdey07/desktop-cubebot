@@ -24,6 +24,7 @@ export interface CubeBotSettings {
     voicePitch: number      // 0 – 2 (default 1.5 for cartoon)
     voiceRate: number        // 0.1 – 2 (default 1.15 for snappy)
     sttLang: string         // SpeechRecognition.lang
+    isUnhinged: boolean     // Chaos mode: bypass system prompt and RAG
 }
 
 export interface ChatStore {

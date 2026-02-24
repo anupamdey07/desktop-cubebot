@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, X, Trash2, Key, Bot, Sliders, Volume2, Mic } from 'lucide-react'
+import { Settings, X, Trash2, Key, Bot, Sliders, Volume2, Mic, Zap } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
 import {
     VOICE_PRESETS,
@@ -289,9 +289,35 @@ export function SettingsPanel() {
 
                                 {/* ─── AI SETTINGS ────────────────────────── */}
                                 <div className="border-t border-slate-100 pt-4">
-                                    <h3 className="text-xs font-bold text-slate-600 mb-4 uppercase tracking-wide">
-                                        AI Settings
+                                    <h3 className="flex items-center gap-1.5 text-xs font-bold text-slate-600 mb-4 uppercase tracking-wide">
+                                        <Zap size={12} className="text-purple-500" />
+                                        AI Engine
                                     </h3>
+
+                                    {/* Unhinged Toggle */}
+                                    <section className="mb-6 p-3 rounded-xl bg-purple-50 border border-purple-100">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Zap size={14} className="text-purple-600" />
+                                                <label className="text-xs font-bold text-purple-900 uppercase tracking-tight">
+                                                    Unhinged Mode
+                                                </label>
+                                            </div>
+                                            <button
+                                                onClick={() => updateSettings({ isUnhinged: !settings.isUnhinged })}
+                                                className={`w-10 h-5 rounded-full transition-colors relative ${settings.isUnhinged ? 'bg-purple-600' : 'bg-slate-300'
+                                                    }`}
+                                            >
+                                                <div
+                                                    className={`w-4 h-4 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform ${settings.isUnhinged ? 'translate-x-5' : 'translate-x-0.5'
+                                                        }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-purple-600/70 mt-1 font-medium italic">
+                                            Bypasses persona, RAG, and filters. Raw Kimi chaos. 🌪️
+                                        </p>
+                                    </section>
 
                                     {/* System Prompt */}
                                     <section className="mb-4">
