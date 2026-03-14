@@ -14,10 +14,20 @@ export async function streamChatCompletion(
     callbacks: StreamCallbacks
 ) {
     const isKimi = settings.provider === 'kimi'
-    const apiKey = isKimi ? settings.apiKey : settings.groqApiKey
-    const baseUrl = isKimi ? 'https://api.moonshot.cn/v1' : 'https://api.groq.com/openai/v1'
+    const isGroq = settings.provider === 'groq'
+    
+    let apiKey = settings.apiKey
+    let baseUrl = 'https://api.moonshot.cn/v1'
 
-    if (!apiKey) {
+    if (isGroq) {
+        apiKey = settings.groqApiKey
+        baseUrl = 'https://api.groq.com/openai/v1'
+    } else if (settings.provider === 'ollama') {
+        apiKey = 'ollama' // dummy, not usually required
+        baseUrl = `${settings.ollamaUrl.replace(/\/$/, '')}/v1`
+    }
+
+    if (!apiKey && settings.provider !== 'ollama') {
         callbacks.onError(new Error(`Missing API Key for ${settings.provider}. Please add it in Settings.`))
         return
     }

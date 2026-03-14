@@ -21,6 +21,14 @@ const PROVIDER_MODELS = {
         { value: 'llama3-70b-8192', label: 'Llama 3 · 70B' },
         { value: 'llama3-8b-8192', label: 'Llama 3 · 8B (Instant)' },
         { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
+    ],
+    ollama: [
+        { value: 'llama3', label: 'Ollama Llama 3' },
+        { value: 'llama3:8b', label: 'Ollama Llama 3 (8B)' },
+        { value: 'mistral', label: 'Ollama Mistral' },
+        { value: 'phi3', label: 'Ollama Phi-3' },
+        { value: 'gemma2', label: 'Ollama Gemma 2' },
+        { value: 'qwen2', label: 'Ollama Qwen 2' }
     ]
 }
 
@@ -139,51 +147,65 @@ export function SettingsPanel() {
                                         <Cpu size={11} />
                                         AI Provider
                                     </label>
-                                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
-                                        {(['kimi', 'groq'] as const).map((p) => (
+                                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl overflow-x-auto">
+                                        {(['kimi', 'groq', 'ollama'] as const).map((p) => (
                                             <button
                                                 key={p}
                                                 onClick={() => {
                                                     const defaultModel = PROVIDER_MODELS[p][0].value
                                                     updateSettings({ provider: p, model: defaultModel })
                                                 }}
-                                                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${settings.provider === p
+                                                className={`flex-1 min-w-[max-content] px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${settings.provider === p
                                                     ? 'bg-white text-indigo-600 shadow-sm'
                                                     : 'text-slate-500 hover:text-slate-700'
                                                     }`}
                                             >
-                                                {p === 'kimi' ? 'Moonshot (Kimi)' : 'Groq (Ultra-Fast)'}
+                                                {p === 'kimi' ? 'Moonshot' : p === 'groq' ? 'Groq' : 'Local Ollama'}
                                             </button>
                                         ))}
                                     </div>
                                 </section>
 
-                                {/* API Key */}
+                                {/* API Key / URL */}
                                 <section>
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
                                         <Key size={11} />
-                                        {settings.provider === 'kimi' ? 'Kimi API Key' : 'Groq API Key'}
+                                        {settings.provider === 'kimi' ? 'Kimi API Key' : settings.provider === 'groq' ? 'Groq API Key' : 'Ollama Host URL'}
                                     </label>
                                     <input
-                                        type="password"
-                                        value={settings.provider === 'kimi' ? settings.apiKey : settings.groqApiKey}
+                                        type={settings.provider === 'ollama' ? 'text' : 'password'}
+                                        value={
+                                            settings.provider === 'kimi' ? settings.apiKey :
+                                            settings.provider === 'groq' ? settings.groqApiKey : settings.ollamaUrl
+                                        }
                                         onChange={(e) => {
                                             if (settings.provider === 'kimi') {
                                                 updateSettings({ apiKey: e.target.value })
-                                            } else {
+                                            } else if (settings.provider === 'groq') {
                                                 updateSettings({ groqApiKey: e.target.value })
+                                            } else {
+                                                updateSettings({ ollamaUrl: e.target.value })
                                             }
                                         }}
-                                        placeholder="sk-..."
+                                        placeholder={settings.provider === 'ollama' ? 'http://192.168.0.152:11434' : 'sk-...'}
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
                                     />
                                     <p className="text-[11px] text-slate-400 mt-1.5">
-                                        {settings.provider === 'kimi' ? (
+                                        {settings.provider === 'kimi' && (
                                             <>Get at <a href="https://platform.moonshot.cn" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">platform.moonshot.cn</a></>
-                                        ) : (
+                                        )}
+                                        {settings.provider === 'groq' && (
                                             <>Get at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">console.groq.com</a></>
                                         )}
+                                        {settings.provider === 'ollama' && (
+                                            <>Point to your local Jetson Ollama instance (e.g. your Nano IP over port 11434).</>
+                                        )}
                                     </p>
+                                    {settings.provider === 'ollama' && (
+                                        <p className="text-[11px] text-amber-500 mt-1 font-medium pb-2">
+                                            ⚠️ If using Vercel (HTTPS), ensure your Jetson is exposed securely (e.g. Ngrok) to avoid "Mixed Content" browser blocking. Or run web-app locally via `npm run dev`.
+                                        </p>
+                                    )}
                                 </section>
 
                                 {/* Model */}
