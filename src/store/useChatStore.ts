@@ -96,7 +96,7 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     provider: 'kimi',
     apiKey: import.meta.env.VITE_CUBEBOT_API_KEY ?? '',
     groqApiKey: import.meta.env.VITE_GROQ_API_KEY ?? '',
-    ollamaUrl: 'http://192.168.0.152:11434',
+    ollamaUrl: 'http://100.83.247.26:11434',
     model: 'moonshot-v1-8k',
     systemPrompt: SUPER_PROMPT,
     temperature: 0.7,
@@ -172,6 +172,10 @@ export const useChatStore = create<ChatStore>()(
                     if (!state.settings.groqApiKey) {
                         const groqEnvKey = import.meta.env.VITE_GROQ_API_KEY ?? ''
                         if (groqEnvKey) state.settings.groqApiKey = groqEnvKey
+                    }
+                    // Auto-migrate old local IP to Tailscale IP
+                    if (state.settings.ollamaUrl === 'http://192.168.0.152:11434') {
+                        state.settings.ollamaUrl = 'http://100.83.247.26:11434'
                     }
                 }
             },

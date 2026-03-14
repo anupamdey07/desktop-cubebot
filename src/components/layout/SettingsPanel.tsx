@@ -187,7 +187,7 @@ export function SettingsPanel() {
                                                 updateSettings({ ollamaUrl: e.target.value })
                                             }
                                         }}
-                                        placeholder={settings.provider === 'ollama' ? 'http://192.168.0.152:11434' : 'sk-...'}
+                                        placeholder={settings.provider === 'ollama' ? 'http://100.83.247.26:11434' : 'sk-...'}
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
                                     />
                                     <p className="text-[11px] text-slate-400 mt-1.5">
@@ -198,7 +198,7 @@ export function SettingsPanel() {
                                             <>Get at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">console.groq.com</a></>
                                         )}
                                         {settings.provider === 'ollama' && (
-                                            <>Point to your local Jetson Ollama instance (e.g. your Nano IP over port 11434).</>
+                                            <>Point to your local Jetson Ollama instance (e.g. Tailscale IP over port 11434).</>
                                         )}
                                     </p>
                                     {settings.provider === 'ollama' && (
