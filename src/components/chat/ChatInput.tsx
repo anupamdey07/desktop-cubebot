@@ -96,25 +96,26 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
                 const newText = transcript.trim()
                 if (newText) {
                     setText(newText)
-                    setIsProcessing(false) // Reset processing on successful result
-                    
-                    if (voiceEnabled) {
-                        setAutoSendCountdown(true)
-                        autoSendTimerRef.current = setTimeout(() => {
-                            onSend(newText)
-                            setText('')
-                            setAutoSendCountdown(false)
-                            autoSendTimerRef.current = null
-                            if (textareaRef.current) textareaRef.current.style.height = 'auto'
-                        }, 1000)
-                    }
-                } else {
                     setIsProcessing(false)
+                    // Cancel any previous auto-send (new interim result came in)
+                    cancelAutoSend()
                 }
             },
             onEnd: () => {
                 setIsListening(false)
                 setIsProcessing(false)
+                // Auto-send after recognition ends (user clicked stop) if voice mode is on
+                const currentText = textareaRef.current?.value?.trim() || ''
+                if (voiceEnabled && currentText) {
+                    setAutoSendCountdown(true)
+                    autoSendTimerRef.current = setTimeout(() => {
+                        onSend(currentText)
+                        setText('')
+                        setAutoSendCountdown(false)
+                        autoSendTimerRef.current = null
+                        if (textareaRef.current) textareaRef.current.style.height = 'auto'
+                    }, 1200)
+                }
             },
             onError: (err: string) => {
                 console.warn('STT error:', err)
@@ -125,7 +126,7 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
             onRecordingStateChange: (recording: boolean) => {
                 setIsListening(recording)
                 if (recording) setIsProcessing(false)
-                else if (settings.sttMode === 'whisper') setIsProcessing(true) // Only whisper shows processing spinner
+                else if (settings.sttMode === 'whisper') setIsProcessing(true)
             }
         }
 
