@@ -230,7 +230,7 @@ function ScreenChat({ messages, isStreaming }: ScreenChatProps) {
                             )}
                             <div className="prose prose-invert prose-xs prose-green max-w-none inline-block align-top 
                                 prose-p:my-0 prose-ul:my-1 prose-li:my-0 prose-code:text-green-300 prose-code:bg-green-950/40 prose-code:px-1 prose-code:rounded
-                                prose-headings:my-1 prose-headings:text-green-300 prose-hr:my-2 prose-hr:border-green-800/20">
+                                prose-headings:my-1 prose-headings:text-green-300 prose-hr:my-1 prose-hr:border-green-800/20 leading-tight">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                     {msg.content}
                                 </ReactMarkdown>

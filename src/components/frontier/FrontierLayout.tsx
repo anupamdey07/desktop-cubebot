@@ -253,7 +253,7 @@ export function FrontierLayout() {
                     onScroll={handleScroll}
                     className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar scroll-smooth"
                 >
-                    <div className="max-w-3xl mx-auto space-y-8 pb-20">
+                    <div className="max-w-3xl mx-auto space-y-4 pb-20">
                         {(!currentSession || currentSession.messages.filter(m => m.role !== 'system').length === 0) && (
                             <div className="h-full flex flex-col items-center justify-center pt-20 text-center space-y-4">
                                 <div className="w-16 h-16 rounded-3xl bg-indigo-50 flex items-center justify-center mb-2">
@@ -266,15 +266,15 @@ export function FrontierLayout() {
                         
                         {currentSession?.messages.filter(m => m.role !== 'system').map(m => (
                             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-4 shadow-sm relative ${
+                                <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm relative ${
                                     m.role === 'user' 
                                     ? 'bg-indigo-600 text-white rounded-tr-none' 
-                                    : 'bg-white text-slate-800 border border-slate-200/50 rounded-tl-none font-sans leading-relaxed'
+                                    : 'bg-white text-slate-800 border border-slate-200/50 rounded-tl-none font-sans leading-snug'
                                 }`}>
-                                    <div className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50">
+                                    <div className="text-[10px] font-bold uppercase tracking-widest mb-0.5 opacity-50">
                                         {m.role === 'user' ? 'YOU' : 'CUBEBOT'}
                                     </div>
-                                    <div className="text-[14px] prose prose-slate max-w-none prose-sm prose-indigo whitespace-pre-wrap">
+                                    <div className="text-[14px] prose prose-slate max-w-none prose-sm prose-indigo prose-p:my-0 prose-ul:my-1 prose-li:my-0 prose-headings:my-1">
                                         {m.content ? (
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {m.content}
