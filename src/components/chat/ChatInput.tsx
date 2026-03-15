@@ -96,7 +96,7 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
                 const newText = transcript.trim()
                 if (newText) {
                     setText(newText)
-                    setIsProcessing(false)
+                    setIsProcessing(false) // Reset processing on successful result
                     
                     if (voiceEnabled) {
                         setAutoSendCountdown(true)

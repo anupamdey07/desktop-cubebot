@@ -191,7 +191,7 @@ export async function startWhisperListening(
         }
 
         mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
             callbacks.onRecordingStateChange?.(false)
 
             try {
@@ -229,8 +229,11 @@ export async function startWhisperListening(
             }
         }
 
-        mediaRecorder.start()
-        callbacks.onRecordingStateChange?.(true)
+        if (mediaRecorder) {
+            mediaRecorder.start()
+            console.log('[Whisper] Recording started...')
+            callbacks.onRecordingStateChange?.(true)
+        }
     } catch (err: any) {
         callbacks.onError(`Mic access failed: ${err.message}`)
     }
