@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Cpu, Settings as SettingsIcon, X, Trash2, Key, Bot, Sliders, Volume2, Mic, Zap } from 'lucide-react'
+import { Cpu, Settings as SettingsIcon, X, Trash2, Key, Bot, Sliders, Volume2, Mic, Zap, Bookmark } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
 import {
     VOICE_PRESETS,
@@ -500,6 +500,42 @@ export function SettingsPanel() {
                                             onChange={(e) => updateSettings({ maxTokens: parseInt(e.target.value) })}
                                             className="w-full accent-indigo-500"
                                         />
+                                    </section>
+                                </div>
+
+                                {/* ─── KNOWLEDGE BASE ──────────────────────── */}
+                                <div className="border-t border-slate-100 pt-4">
+                                    <h3 className="flex items-center gap-1.5 text-xs font-bold text-slate-600 mb-4 uppercase tracking-wide">
+                                        <Bookmark size={12} className="text-emerald-500" />
+                                        Knowledge Base (Karakeep)
+                                    </h3>
+
+                                    <section className="mb-3">
+                                        <label className="text-xs font-semibold text-slate-500 mb-1.5 block uppercase tracking-wide">
+                                            Karakeep URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={settings.karakeepUrl}
+                                            onChange={(e) => updateSettings({ karakeepUrl: e.target.value })}
+                                            placeholder="https://cubebot-ubuntu.tailc63e0c.ts.net"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-emerald-300 transition-all font-mono"
+                                        />
+                                        <p className="text-[11px] text-slate-400 mt-1">Tailscale URL for Karakeep instance</p>
+                                    </section>
+
+                                    <section>
+                                        <label className="text-xs font-semibold text-slate-500 mb-1.5 block uppercase tracking-wide">
+                                            API Key
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={settings.karakeepApiKey}
+                                            onChange={(e) => updateSettings({ karakeepApiKey: e.target.value })}
+                                            placeholder="Bearer token from Karakeep settings"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none focus:border-emerald-300 transition-all font-mono"
+                                        />
+                                        <p className="text-[11px] text-slate-400 mt-1">Karakeep → Settings → API Keys</p>
                                     </section>
                                 </div>
                             </div>

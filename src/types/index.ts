@@ -43,6 +43,8 @@ export interface CubeBotSettings {
     sttLang: string         // Engine language
     sttMode: 'whisper' | 'browser' // STT Engine choice
     isUnhinged: boolean     // Chaos mode: bypass system prompt and RAG
+    karakeepUrl: string     // Karakeep URL (Tailscale)
+    karakeepApiKey: string  // Karakeep API key
 }
 
 export interface ChatStore {

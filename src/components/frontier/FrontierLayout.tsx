@@ -30,11 +30,25 @@ export function FrontierLayout() {
     
     const { send, stop } = useCubeBotChat()
     
-    const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
+    // Sidebar: default open on desktop (>=1024px), closed on mobile
+    const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 1024)
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(() => window.innerWidth >= 1024)
     const [syncStatus, setSyncStatus] = React.useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
     const [showScrollDown, setShowScrollDown] = React.useState(false)
     const [showVoiceToast, setShowVoiceToast] = React.useState(false)
     const scrollAreaRef = React.useRef<HTMLDivElement>(null)
+
+    // Track viewport changes (e.g. phone rotation)
+    React.useEffect(() => {
+        const handleResize = () => {
+            const mobile = window.innerWidth < 1024
+            setIsMobile(mobile)
+            // Auto-collapse sidebar if resizing down to mobile
+            if (mobile) setIsSidebarOpen(false)
+        }
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     const handleVoiceToggle = () => {
         const next = !settings.voiceEnabled
@@ -79,11 +93,29 @@ export function FrontierLayout() {
 
     return (
         <div className="flex h-screen w-full bg-[#fcfcfc] text-slate-800 font-sans overflow-hidden">
-            {/* Sidebar */}
-            <motion.aside 
+            {/* Sidebar — overlay on mobile, inline on desktop */}
+            <AnimatePresence>
+            {isSidebarOpen && isMobile && (
+                // Mobile: dark backdrop dismisses sidebar
+                <motion.div
+                    className="fixed inset-0 bg-black/40 z-30"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+            </AnimatePresence>
+
+            <motion.aside
                 initial={false}
-                animate={{ width: isSidebarOpen ? 260 : 0, opacity: isSidebarOpen ? 1 : 0 }}
-                className="bg-[#f3f3f3] border-r border-slate-200 flex flex-col h-full relative"
+                animate={isMobile
+                    ? { x: isSidebarOpen ? 0 : -280 }           // Mobile: slide in/out (overlay)
+                    : { width: isSidebarOpen ? 260 : 0, opacity: isSidebarOpen ? 1 : 0 }  // Desktop: push layout
+                }
+                className={`bg-[#f3f3f3] border-r border-slate-200 flex flex-col h-full shrink-0 ${
+                    isMobile ? 'fixed left-0 top-0 bottom-0 z-40 w-[280px]' : 'relative'
+                }`}
             >
                 <div className="p-4 flex flex-col h-full overflow-hidden w-[260px]">
                     <button 
@@ -104,7 +136,7 @@ export function FrontierLayout() {
                                 }`}
                             >
                                 <button
-                                    onClick={() => switchSession(s.id)}
+                                    onClick={() => { switchSession(s.id); if (isMobile) setIsSidebarOpen(false) }}
                                     className={`flex-1 text-left p-2.5 text-sm truncate rounded-lg ${
                                         s.id === currentSessionId ? 'font-bold text-indigo-700' : 'text-slate-600'
                                     }`}
