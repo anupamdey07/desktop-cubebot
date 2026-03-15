@@ -282,6 +282,10 @@ export function startListening(callbacks: ListenCallback, lang = 'en-US') {
         callbacks.onEnd()
     }
 
+    recognitionInstance.onstart = () => {
+        callbacks.onRecordingStateChange?.(true)
+    }
+
     recognitionInstance.start()
 }
 

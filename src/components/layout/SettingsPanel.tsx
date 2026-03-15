@@ -387,7 +387,7 @@ export function SettingsPanel() {
                                                     : 'bg-white border-slate-200 text-slate-400'
                                                 }`}
                                             >
-                                                Browser (Old)
+                                                Web Speech API
                                             </button>
                                         </div>
                                         <p className="text-[9px] text-slate-400 mt-1.5 leading-tight">

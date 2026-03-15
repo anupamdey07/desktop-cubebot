@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Volume2, VolumeX, Loader2, CheckCircle2, AlertCircle, Tag, Layout as LayoutIcon } from 'lucide-react'
+import { Volume2, VolumeX, Loader2, CheckCircle2, AlertCircle, Tag, Layout as LayoutIcon, RefreshCw } from 'lucide-react'
 import { ComputerBot } from '../components/bot/CubeBot'
 import { ChatInput } from '../components/chat/ChatInput'
 import { SettingsPanel } from '../components/layout/SettingsPanel'
@@ -139,6 +139,16 @@ export function ChatPage() {
                     ) : (
                         <Tag size={12} />
                     )}
+                </motion.button>
+                
+                {/* Repair Button (in case of stuck state) */}
+                <motion.button 
+                    onClick={() => useChatStore.getState().setStreaming(false)}
+                    whileTap={{ scale: 0.88 }}
+                    title="Reset system state"
+                    className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-300 hover:text-indigo-400 shadow-sm flex items-center justify-center transition-all"
+                >
+                    <RefreshCw size={14} />
                 </motion.button>
                 
                 <SettingsPanel />
