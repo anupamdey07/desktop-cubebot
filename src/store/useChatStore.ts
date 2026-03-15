@@ -171,6 +171,13 @@ export const useChatStore = create<ChatStore>()(
                         state.settings.gatewayUrl = 'http://100.83.247.26:4000'
                         state.settings.gatewayKey = 'sk-jetson-master-key-1234'
                     }
+                    
+                    // Force-migrate any old complex model names to the new LiteLLM aliases
+                    const validModels = ['ollama-local', 'groq', 'kimi']
+                    if (!validModels.includes(state.settings.model)) {
+                        state.settings.model = 'ollama-local'
+                        state.settings.provider = 'ollama'
+                    }
                 }
             },
         }
