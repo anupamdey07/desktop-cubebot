@@ -262,6 +262,8 @@ export function startListening(callbacks: ListenCallback, lang = 'en-US') {
     recognitionInstance.interimResults = false
     recognitionInstance.maxAlternatives = 1
     recognitionInstance.continuous = false
+    
+    console.log(`[STT] Initializing Browser SpeechRecognition (${lang})...`)
 
     recognitionInstance.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript
@@ -276,6 +278,7 @@ export function startListening(callbacks: ListenCallback, lang = 'en-US') {
         } else {
             callbacks.onError(`Speech error: ${event.error}`)
         }
+        console.error(`[STT] Recognition Error: ${event.error}`)
     }
 
     recognitionInstance.onend = () => {
@@ -284,6 +287,7 @@ export function startListening(callbacks: ListenCallback, lang = 'en-US') {
     }
 
     recognitionInstance.onstart = () => {
+        console.log('[STT] Recognition started - listening for voice...')
         callbacks.onRecordingStateChange?.(true)
     }
 

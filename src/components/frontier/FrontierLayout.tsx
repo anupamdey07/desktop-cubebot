@@ -3,13 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Plus, Bookmark, Tag, Settings, Terminal, Send, Search, 
     PanelLeftClose, PanelLeftOpen, Trash2, Star, CheckCircle2, 
-    Loader2, AlertCircle, Edit2, RefreshCw, ArrowDown
+    Loader2, AlertCircle, Edit2, RefreshCw, ArrowDown, Volume2, VolumeX
 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useChatStore } from '../../store/useChatStore'
 import { ChatInput } from '../chat/ChatInput'
 import { SettingsPanel } from '../layout/SettingsPanel'
 import { useCubeBotChat } from '../../hooks/useCubeBotChat'
 import { syncSessionToKarakeep } from '../../services/karakeepService'
+import { unlockSpeech, isTTSSupported, stopSpeaking } from '../../services/voiceService'
 
 export function FrontierLayout() {
     const { 
@@ -30,7 +33,18 @@ export function FrontierLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
     const [syncStatus, setSyncStatus] = React.useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
     const [showScrollDown, setShowScrollDown] = React.useState(false)
+    const [showVoiceToast, setShowVoiceToast] = React.useState(false)
     const scrollAreaRef = React.useRef<HTMLDivElement>(null)
+
+    const handleVoiceToggle = () => {
+        const next = !settings.voiceEnabled
+        updateSettings({ voiceEnabled: next })
+        if (next) unlockSpeech()
+        else stopSpeaking()
+
+        setShowVoiceToast(true)
+        setTimeout(() => setShowVoiceToast(false), 1800)
+    }
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
@@ -184,6 +198,20 @@ export function FrontierLayout() {
                             <RefreshCw size={14} />
                         </button>
 
+                        {/* Voice toggle */}
+                        {isTTSSupported() && (
+                            <button
+                                onClick={handleVoiceToggle}
+                                title={settings.voiceEnabled ? 'Mute voice' : 'Enable voice'}
+                                className={`p-1.5 rounded-md transition-all duration-200 ${settings.voiceEnabled
+                                    ? 'bg-green-50 text-green-600 border border-green-100'
+                                    : 'hover:bg-slate-100 text-slate-300'
+                                }`}
+                            >
+                                {settings.voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                            </button>
+                        )}
+
                         <SettingsPanel />
 
                         {/* Sync Button */}
@@ -246,8 +274,12 @@ export function FrontierLayout() {
                                     <div className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50">
                                         {m.role === 'user' ? 'YOU' : 'CUBEBOT'}
                                     </div>
-                                    <div className="text-[14px] prose prose-slate max-w-none">
-                                        {m.content || (
+                                    <div className="text-[14px] prose prose-slate max-w-none prose-sm prose-indigo whitespace-pre-wrap">
+                                        {m.content ? (
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {m.content}
+                                            </ReactMarkdown>
+                                        ) : (
                                             <div className="flex gap-1.5 py-2">
                                                 <div className="w-1.5 h-1.5 bg-indigo-400/40 rounded-full animate-bounce [animation-duration:0.8s]" />
                                                 <div className="w-1.5 h-1.5 bg-indigo-400/70 rounded-full animate-bounce [animation-duration:0.8s] [animation-delay:0.2s]" />
@@ -298,6 +330,20 @@ export function FrontierLayout() {
                         Jetson Orin Nano • Faster-Whisper • 100 TOPS Class Edge AI
                     </div>
                 </div>
+
+                {/* Voice on/off toast */}
+                <AnimatePresence>
+                    {showVoiceToast && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="fixed top-20 right-6 z-[100] px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-medium shadow-lg pointer-events-none"
+                        >
+                            {settings.voiceEnabled ? '🔊 Voice on' : '🔇 Voice off'}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </main>
         </div>
     )

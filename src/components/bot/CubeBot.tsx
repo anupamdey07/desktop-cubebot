@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useChatStore } from '../../store/useChatStore'
 import type { Message } from '../../types'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 // ─── Stereocam Lens (with lens flare + PCB ring) ─────────────────────────────
 interface EyeLensProps {
@@ -226,7 +228,13 @@ function ScreenChat({ messages, isStreaming }: ScreenChatProps) {
                             {!isUser && (
                                 <span className="text-green-600/50 text-[8px]">{'>'} </span>
                             )}
-                            <p className="whitespace-pre-wrap break-words inline">{msg.content}</p>
+                            <div className="prose prose-invert prose-xs prose-green max-w-none inline-block align-top 
+                                prose-p:my-0 prose-ul:my-1 prose-li:my-0 prose-code:text-green-300 prose-code:bg-green-950/40 prose-code:px-1 prose-code:rounded
+                                prose-headings:my-1 prose-headings:text-green-300 prose-hr:my-2 prose-hr:border-green-800/20">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {msg.content}
+                                </ReactMarkdown>
+                            </div>
                         </div>
                     </motion.div>
                 )
