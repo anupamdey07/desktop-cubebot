@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Plus, Bookmark, Tag, Settings, Terminal, Send, Search, 
     PanelLeftClose, PanelLeftOpen, Trash2, Star, CheckCircle2, 
-    Loader2, AlertCircle, Edit2
+    Loader2, AlertCircle, Edit2, RefreshCw
 } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
 import { ChatInput } from '../chat/ChatInput'
+import { SettingsPanel } from '../layout/SettingsPanel'
 import { useCubeBotChat } from '../../hooks/useCubeBotChat'
 import { syncSessionToKarakeep } from '../../services/karakeepService'
 
@@ -169,8 +170,10 @@ export function FrontierLayout() {
                             title="Reset system state"
                             className="p-1.5 rounded-md hover:bg-slate-100 text-slate-300 hover:text-indigo-400 transition-colors"
                         >
-                            <Settings size={14} />
+                            <RefreshCw size={14} />
                         </button>
+
+                        <SettingsPanel />
 
                         {/* Sync Button */}
                         <button 
