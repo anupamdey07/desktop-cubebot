@@ -1,28 +1,29 @@
 model_list:
-  # Provider 1: Groq (Ultra-Fast Hardware)
-  - model_name: llama3-70b-8192
+  # Provider 1: Local Ollama (Primary - Jetson First)
+  - model_name: ollama-local
     litellm_params:
-      model: groq/llama3-70b-8192
-      api_key: "os.environ/GROQ_API_KEY"
-      
-  # Provider 2: Moonshot Kimi (Deep Context Wisdom)
-  - model_name: moonshot-v1-8k
-    litellm_params:
-      model: moonshot/moonshot-v1-8k
-      api_key: "os.environ/MOONSHOT_API_KEY"
+      model: ollama/qwen2.5:3b
+      api_base: http://ollama:11434
 
-  # Provider 3: Local Ollama (Jetson Embedded Llama3)
-  - model_name: ollama-llama3
+  # Provider 2: Groq (Ultra-Fast Hardware Fallback)
+  - model_name: groq
     litellm_params:
-      model: ollama/llama3
-      api_base: "http://host.docker.internal:11434"
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+
+  # Provider 3: Moonshot Kimi (Deep Context Wisdom Fallback)
+  - model_name: kimi
+    litellm_params:
+      model: moonshot/kimi-k2.5
+      api_key: os.environ/MOONSHOT_API_KEY
 
 # Intelligent Fallback Routing
+# If the local Jetson model is overloaded or fails, route to Groq, then Kimi.
 router_settings:
   routing_strategy: usage-based-routing
   fallbacks:
-    - {"llama3-70b-8192": ["moonshot-v1-8k", "ollama-llama3"]}
+    - {"ollama-local": ["groq", "kimi"]}
 
 general_settings:
   # The frontend will authenticate here via HTTP Bearer token
-  master_key: "os.environ/MASTER_KEY"
+  master_key: "os.environ/LITELLM_MASTER_KEY"

@@ -12,7 +12,7 @@ import {
 
 const PROVIDER_MODELS = {
     kimi: [
-        { value: 'kimi', label: 'Kimi (Moonshot v1)' },
+        { value: 'kimi', label: 'Kimi (Moonshot v2.5)' },
     ],
     groq: [
         { value: 'groq', label: 'Groq (Llama 3.1 8B)' },
