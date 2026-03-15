@@ -175,8 +175,12 @@ export function SettingsPanel() {
                                             <button
                                                 key={p}
                                                 onClick={() => {
-                                                    const defaultModel = PROVIDER_MODELS[p][0].value
-                                                    updateSettings({ provider: p, model: defaultModel })
+                                                    const defaultModel = PROVIDER_MODELS[p as keyof typeof PROVIDER_MODELS][0].value
+                                                    updateSettings({ 
+                                                        provider: p as any, 
+                                                        model: defaultModel,
+                                                        temperature: p === 'kimi' ? 1.0 : settings.temperature
+                                                    })
                                                 }}
                                                 className={`flex-1 min-w-[max-content] px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${settings.provider === p
                                                     ? 'bg-white text-indigo-600 shadow-sm'
@@ -250,7 +254,10 @@ export function SettingsPanel() {
                                     </label>
                                     <select
                                         value={settings.model}
-                                        onChange={(e) => updateSettings({ model: e.target.value })}
+                                        onChange={(e) => updateSettings({ 
+                                            model: e.target.value,
+                                            temperature: e.target.value === 'kimi' ? 1.0 : settings.temperature
+                                        })}
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-300 transition-all appearance-none cursor-pointer"
                                     >
                                         {PROVIDER_MODELS[settings.provider].map((m) => (

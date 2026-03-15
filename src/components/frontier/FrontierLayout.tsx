@@ -145,7 +145,11 @@ export function FrontierLayout() {
                             {['kimi', 'groq', 'ollama-local'].map(m => (
                                 <button
                                     key={m}
-                                    onClick={() => updateSettings({ model: m, provider: m === 'ollama-local' ? 'ollama' : (m as any) })}
+                                    onClick={() => updateSettings({ 
+                                        model: m, 
+                                        provider: m === 'ollama-local' ? 'ollama' : (m as any),
+                                        temperature: m === 'kimi' ? 1.0 : settings.temperature
+                                    })}
                                     className={`px-4 py-1 rounded-full text-[11px] font-black tracking-tight transition-all duration-200 ${
                                         settings.model === m 
                                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' 
