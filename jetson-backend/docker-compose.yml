@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # LiteLLM Unified Gateway
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-gateway
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/litellm_config.yaml
+    environment:
+      # These keys are mapped securely from your Jetson's .env file
+      - MOONSHOT_API_KEY=${MOONSHOT_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - MASTER_KEY=${MASTER_JETSON_KEY}
+    command:
+      - "--config"
+      - "/app/litellm_config.yaml"
+      - "--port"
+      - "4000"
+    # Allow the container to easily hit the host's Ollama at 11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
