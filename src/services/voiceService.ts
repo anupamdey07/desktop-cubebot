@@ -246,105 +246,125 @@ export function stopWhisperListening() {
 }
 
 /**
- * Browser Web Speech API STT
+ * Browser Web Speech API STT — "Restart Session" Pattern
  *
- * Design:
- * - `continuous:true` keeps capturing until user clicks stop
- * - Only FINAL results are accumulated (no interim flicker)
- * - Transcript lives in a closure, not module scope, so no shared-state bugs
- * - onRecordingStateChange(true) is fired immediately (synchronously) before .start()
- *   so the button enters pulsing state right away without waiting for onstart
+ * Why: Chrome on Mac silently fails with continuous:true — it starts (onstart fires),
+ * then drops without firing onresult. This is a known Chrome/Mac bug from 2017+.
+ *
+ * Fix: Use continuous:false (single-utterance mode — works on ALL platforms).
+ * After each onend, immediately start a new session if the user hasn't clicked stop.
+ * This gives the same UX (mic stays open) while being universally compatible.
+ *
+ * Supported on: Mac Chrome ✅, Android Chrome ✅, Safari ✅, Firefox ❌ (no STT)
  */
+let _sttIsActive = false   // user intent: are we supposed to be listening?
+
 export function startListening(callbacks: ListenCallback, lang = 'en-US') {
     const SpeechRecognitionCtor =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
     if (!SpeechRecognitionCtor) {
-        callbacks.onError('Speech recognition not supported in this browser.')
+        callbacks.onError('Speech recognition not supported in this browser. Try Chrome.')
         return
     }
 
     unlockSpeech()
 
-    // Tell the UI we are recording IMMEDIATELY (synchronous, before browser async onstart)
-    callbacks.onRecordingStateChange?.(true)
-    
+    _sttIsActive = true
     let finalTranscript = ''
 
-    const rec = new SpeechRecognitionCtor()
-    rec.lang = lang
-    rec.interimResults = false  // Only fire when a full sentence is ready
-    rec.maxAlternatives = 1
-    rec.continuous = true       // Keep mic open until user clicks stop
+    // Tell the UI we are recording IMMEDIATELY (before async onstart)
+    callbacks.onRecordingStateChange?.(true)
+    console.log(`[STT] startListening — lang=${lang} (restart-session mode)`)
 
-    console.log(`[STT] startListening called — lang=${lang}`)
+    function createAndStartSession() {
+        if (!_sttIsActive) return
 
-    rec.onstart = () => {
-        console.log('[STT] onstart fired — browser mic is open')
-    }
+        const rec = new SpeechRecognitionCtor()
+        rec.lang = lang
+        rec.interimResults = true   // Show words building up in real time
+        rec.maxAlternatives = 1
+        rec.continuous = false      // Single-utterance — universally compatible ✅
 
-    rec.onresult = (event: any) => {
-        // Accumulate only FINAL results
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            if (event.results[i].isFinal) {
-                const piece = event.results[i][0].transcript
-                finalTranscript += piece + ' '
-                console.log(`[STT] final chunk: "${piece}" | total: "${finalTranscript.trim()}"`)
+        rec.onstart = () => {
+            console.log('[STT] session started — mic open')
+        }
+
+        rec.onresult = (event: any) => {
+            // Accumulate final results; show interim immediately
+            let sessionFinal = ''
+            let sessionInterim = ''
+            for (let i = 0; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    sessionFinal += event.results[i][0].transcript
+                } else {
+                    sessionInterim += event.results[i][0].transcript
+                }
+            }
+            if (sessionFinal) {
+                finalTranscript += sessionFinal + ' '
+                console.log(`[STT] final: "${sessionFinal}" | total: "${finalTranscript.trim()}"`)
+            }
+            // Show combined accumulated + current interim in text box
+            const display = (finalTranscript + sessionInterim).trim()
+            if (display) callbacks.onResult(display)
+        }
+
+        rec.onerror = (event: any) => {
+            if (event.error === 'aborted' || event.error === 'no-speech') {
+                // 'no-speech' is normal — browser detected silence, will restart
+                console.log(`[STT] session event: ${event.error} — restarting if active`)
+                return
+            }
+            if (event.error === 'not-allowed') {
+                _sttIsActive = false
+                callbacks.onError('Microphone access denied. Check browser + macOS permissions.')
+                callbacks.onRecordingStateChange?.(false)
+                callbacks.onEnd()
+            } else {
+                console.error(`[STT] error: ${event.error}`)
             }
         }
-        // Update text box with what we have so far
-        if (finalTranscript.trim()) {
-            callbacks.onResult(finalTranscript.trim())
+
+        rec.onend = () => {
+            console.log(`[STT] session ended — active=${_sttIsActive}`)
+            if (_sttIsActive) {
+                // Restart immediately for next utterance (this is the key Mac fix)
+                try { createAndStartSession() } catch (e) { console.warn('[STT] restart failed:', e) }
+            } else {
+                // User clicked stop — deliver final result
+                const result = finalTranscript.trim()
+                console.log(`[STT] done, final transcript: "${result}"`)
+                if (result) callbacks.onResult(result)
+                callbacks.onRecordingStateChange?.(false)
+                callbacks.onEnd()
+            }
+        }
+
+        recognitionInstance = rec
+        try {
+            rec.start()
+        } catch (e: any) {
+            console.error('[STT] .start() threw:', e)
+            if (_sttIsActive) {
+                // Brief delay and retry — sometimes needed if Chrome is still releasing mic
+                setTimeout(() => { if (_sttIsActive) createAndStartSession() }, 300)
+            }
         }
     }
 
-    rec.onerror = (event: any) => {
-        if (event.error === 'aborted') {
-            // Expected when we call .stop() manually
-            console.log('[STT] aborted — user stopped')
-            return
-        }
-        console.error(`[STT] error: ${event.error}`)
-        if (event.error === 'no-speech') {
-            callbacks.onError('No speech detected.')
-        } else if (event.error === 'not-allowed') {
-            callbacks.onError('Microphone access denied.')
-        } else {
-            callbacks.onError(`Speech error: ${event.error}`)
-        }
-    }
-
-    rec.onend = () => {
-        console.log(`[STT] onend — transcript: "${finalTranscript.trim()}"`)
-        // Deliver whatever we collected
-        if (finalTranscript.trim()) {
-            callbacks.onResult(finalTranscript.trim())
-        }
-        callbacks.onRecordingStateChange?.(false)
-        callbacks.onEnd()
-    }
-
-    recognitionInstance = rec
-
-    try {
-        rec.start()
-        console.log('[STT] .start() called')
-    } catch (e: any) {
-        console.error('[STT] .start() threw:', e)
-        callbacks.onRecordingStateChange?.(false)
-        callbacks.onError(`Could not start: ${e.message}`)
-    }
+    createAndStartSession()
 }
 
 export function stopListening() {
+    console.log('[STT] stopListening called')
+    _sttIsActive = false  // Signal sessions to stop restarting
     if (recognitionInstance) {
-        console.log('[STT] stopListening called')
-        recognitionInstance.stop()
+        try { recognitionInstance.stop() } catch (_) {}
         recognitionInstance = null
-    } else {
-        console.warn('[STT] stopListening called but no active instance')
     }
 }
+
 
 
 // ─── Text-to-Speech (Speaking) ───────────────────────────────────────────────
