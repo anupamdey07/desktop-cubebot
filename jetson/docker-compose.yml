@@ -31,16 +31,16 @@ services:
       - ai-network
 
   whisper:
-    image: dustynv/whisper.cpp:r36.2.0
+    image: dustynv/faster-whisper:r36.2.0
     container_name: whisper-server
     restart: always
     ports:
-      - "8081:8080"
-    # Using 'base' model for good balance of speed and accuracy on Orin Nano
-    command: ["--model", "base", "--port", "8080"]
+      - "8082:8000"
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
+    # faster-whisper automatically starts its server on port 8000 inside the container
+
     networks:
       - ai-network
 
