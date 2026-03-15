@@ -13,31 +13,22 @@ export async function streamChatCompletion(
     settings: CubeBotSettings,
     callbacks: StreamCallbacks
 ) {
-    const isKimi = settings.provider === 'kimi'
-    const isGroq = settings.provider === 'groq'
-    
-    let apiKey = settings.apiKey
-    let baseUrl = 'https://api.moonshot.cn/v1'
+    const { gatewayUrl, gatewayKey, model } = settings
 
-    if (isGroq) {
-        apiKey = settings.groqApiKey
-        baseUrl = 'https://api.groq.com/openai/v1'
-    } else if (settings.provider === 'ollama') {
-        apiKey = 'ollama' // dummy, not usually required
-        baseUrl = `${settings.ollamaUrl.replace(/\/$/, '')}/v1`
-    }
-
-    if (!apiKey && settings.provider !== 'ollama') {
-        callbacks.onError(new Error(`Missing API Key for ${settings.provider}. Please add it in Settings.`))
+    if (!gatewayUrl || !gatewayKey) {
+        callbacks.onError(new Error('Gateway URL and Master Key are required. Please check Settings.'))
         return
     }
 
     try {
-        const response = await fetch(`${baseUrl}/chat/completions`, {
+        const baseUrl = gatewayUrl.replace(/\/$/, '')
+        const endpoint = `${baseUrl}/v1/chat/completions`
+
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Bearer ${gatewayKey}`,
             },
             body: JSON.stringify({
                 model: settings.model,

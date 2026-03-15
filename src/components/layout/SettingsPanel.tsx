@@ -166,44 +166,44 @@ export function SettingsPanel() {
                                     </div>
                                 </section>
 
-                                {/* API Key / URL */}
-                                <section>
-                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
-                                        <Key size={11} />
-                                        {settings.provider === 'kimi' ? 'Kimi API Key' : settings.provider === 'groq' ? 'Groq API Key' : 'Ollama Host URL'}
-                                    </label>
-                                    <input
-                                        type={settings.provider === 'ollama' ? 'text' : 'password'}
-                                        value={
-                                            settings.provider === 'kimi' ? settings.apiKey :
-                                            settings.provider === 'groq' ? settings.groqApiKey : settings.ollamaUrl
-                                        }
-                                        onChange={(e) => {
-                                            if (settings.provider === 'kimi') {
-                                                updateSettings({ apiKey: e.target.value })
-                                            } else if (settings.provider === 'groq') {
-                                                updateSettings({ groqApiKey: e.target.value })
-                                            } else {
-                                                updateSettings({ ollamaUrl: e.target.value })
-                                            }
-                                        }}
-                                        placeholder={settings.provider === 'ollama' ? 'http://100.83.247.26:11434' : 'sk-...'}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
-                                    />
-                                    <p className="text-[11px] text-slate-400 mt-1.5">
-                                        {settings.provider === 'kimi' && (
-                                            <>Get at <a href="https://platform.moonshot.cn" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">platform.moonshot.cn</a></>
-                                        )}
-                                        {settings.provider === 'groq' && (
-                                            <>Get at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">console.groq.com</a></>
-                                        )}
-                                        {settings.provider === 'ollama' && (
-                                            <>Point to your local Jetson Ollama instance (e.g. Tailscale IP over port 11434).</>
-                                        )}
-                                    </p>
-                                    {settings.provider === 'ollama' && (
-                                        <p className="text-[11px] text-amber-500 mt-1 font-medium pb-2">
-                                            ⚠️ If using Vercel (HTTPS), ensure your Jetson is exposed securely (e.g. Ngrok) to avoid "Mixed Content" browser blocking. Or run web-app locally via `npm run dev`.
+                                {/* Gateway Key / URL */}
+                                <section className="p-3 bg-slate-50 border border-slate-200 rounded-xl relative">
+                                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide flex justify-between items-center mb-3">
+                                        <span className="flex items-center gap-1.5"><Key size={11} /> LiteLLM Gateway</span>
+                                        <a href={`${settings.gatewayUrl.replace(/\/v1$/, '')}/ui`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-500 hover:text-indigo-600 font-semibold normal-case flex items-center gap-1">
+                                            Open Dashboard <Zap size={10} />
+                                        </a>
+                                    </h4>
+                                    
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 font-semibold mb-1 block">Gateway URL</label>
+                                            <input
+                                                type="text"
+                                                value={settings.gatewayUrl}
+                                                onChange={(e) => updateSettings({ gatewayUrl: e.target.value })}
+                                                placeholder="http://100.83.247.26:4000"
+                                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-700 outline-none focus:border-indigo-300 transition-all font-mono"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] text-slate-500 font-semibold mb-1 flex justify-between">
+                                                Master Key
+                                                <span className="text-[9px] text-indigo-400 font-normal">Authenticates frontend to Jetson</span>
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={settings.gatewayKey}
+                                                onChange={(e) => updateSettings({ gatewayKey: e.target.value })}
+                                                placeholder="sk-jetson-master..."
+                                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-700 outline-none focus:border-indigo-300 transition-all font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {settings.gatewayUrl.includes('localhost') || settings.gatewayUrl.includes('100.') ? null : (
+                                        <p className="text-[11px] text-amber-500 mt-2 font-medium leading-tight">
+                                            ⚠️ Ensure your browser isn't blocking Mixed Content if accessing from HTTPS.
                                         </p>
                                     )}
                                 </section>

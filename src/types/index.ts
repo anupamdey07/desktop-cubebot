@@ -16,9 +16,8 @@ export type AIProvider = 'kimi' | 'groq' | 'ollama'
 
 export interface CubeBotSettings {
     provider: AIProvider
-    apiKey: string          // Kimi Key
-    groqApiKey: string      // Groq Key
-    ollamaUrl: string       // Ollama Host URL
+    gatewayUrl: string      // LiteLLM Gateway URL
+    gatewayKey: string      // LiteLLM Master Key
     model: string
     systemPrompt: string
     temperature: number
