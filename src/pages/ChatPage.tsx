@@ -8,10 +8,23 @@ import { useChatStore } from '../store/useChatStore'
 import { useCubeBotChat } from '../hooks/useCubeBotChat'
 import { unlockSpeech, isTTSSupported, stopSpeaking } from '../services/voiceService'
 
+import { FrontierLayout } from '../components/frontier/FrontierLayout'
+
 export function ChatPage() {
-    const { messages, isStreaming, settings, updateSettings, setEyeTarget } = useChatStore()
+    const { 
+        sessions, 
+        currentSessionId, 
+        isStreaming, 
+        settings, 
+        updateSettings, 
+        setEyeTarget,
+        activeSkin 
+    } = useChatStore()
     const { send, stop } = useCubeBotChat()
     const [showVoiceToast, setShowVoiceToast] = useState(false)
+
+    const currentSession = sessions[currentSessionId]
+    const messages = currentSession?.messages || []
 
     // Eye tracking — normalize cursor position to -1..1 from center
     const handleMouseMove = useCallback(
@@ -30,22 +43,23 @@ export function ChatPage() {
         return () => window.removeEventListener('mousemove', handleMouseMove)
     }, [handleMouseMove])
 
-    // ── Voice toggle — this is a direct user click, so Chrome allows TTS ──
+    // ── Voice toggle ──
     const handleVoiceToggle = () => {
         const next = !settings.voiceEnabled
         updateSettings({ voiceEnabled: next })
 
         if (next) {
-            // IMPORTANT: unlockSpeech() here runs inside a user click handler,
-            // which satisfies Chrome's autoplay gesture requirement for TTS
             unlockSpeech()
         } else {
             stopSpeaking()
         }
 
-        // Show brief toast
         setShowVoiceToast(true)
         setTimeout(() => setShowVoiceToast(false), 1800)
+    }
+
+    if (activeSkin === 'frontier') {
+        return <FrontierLayout />
     }
 
     return (
@@ -62,7 +76,7 @@ export function ChatPage() {
 
             {/* Top-right controls */}
             <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-                {/* Voice toggle — gives Chrome the user gesture it needs */}
+                {/* Voice toggle */}
                 {isTTSSupported() && (
                     <motion.button
                         onClick={handleVoiceToggle}
@@ -104,7 +118,7 @@ export function ChatPage() {
                 <p className="text-slate-400 text-xs">Your desk companion</p>
             </motion.div>
 
-            {/* Computer Bot — chat rendered inside the screen */}
+            {/* Computer Bot */}
             <motion.div
                 className="w-full flex justify-center"
                 initial={{ opacity: 0, y: 16 }}
@@ -114,7 +128,7 @@ export function ChatPage() {
                 <ComputerBot messages={messages} isStreaming={isStreaming} />
             </motion.div>
 
-            {/* Chat Input — full width on mobile */}
+            {/* Chat Input */}
             <motion.div
                 className="relative w-full max-w-xl px-0 mt-8 mb-4 sm:px-4"
                 initial={{ opacity: 0, y: 12 }}

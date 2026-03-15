@@ -7,12 +7,24 @@ export interface Message {
     timestamp: Date
 }
 
+export interface ChatSession {
+    id: string
+    title: string
+    messages: Message[]
+    tags: string[]
+    isBookmarked: boolean
+    createdAt: Date
+    updatedAt: Date
+    model?: string
+}
+
 export interface BotState {
     status: 'idle' | 'thinking' | 'speaking' | 'error'
     eyeTarget: { x: number; y: number }
 }
 
 export type AIProvider = 'kimi' | 'groq' | 'ollama'
+export type UISkin = 'cubebot' | 'frontier'
 
 export interface CubeBotSettings {
     provider: AIProvider
@@ -32,17 +44,28 @@ export interface CubeBotSettings {
 }
 
 export interface ChatStore {
-    messages: Message[]
+    sessions: Record<string, ChatSession>
+    currentSessionId: string
     isStreaming: boolean
     botState: BotState
     settings: CubeBotSettings
     lastLatency?: number
-    addMessage: (msg: Omit<Message, 'id' | 'timestamp'>) => Message
-    updateLastMessage: (content: string) => void
+    activeSkin: UISkin
+
+    // Actions
+    addMessage: (sessionId: string, msg: Omit<Message, 'id' | 'timestamp'>) => Message
+    updateLastMessage: (sessionId: string, content: string) => void
     setStreaming: (v: boolean) => void
     setBotStatus: (status: BotState['status']) => void
     setEyeTarget: (pos: { x: number; y: number }) => void
     updateSettings: (s: Partial<CubeBotSettings>) => void
     setLatency: (ms: number) => void
+    setSkin: (skin: UISkin) => void
+    
+    // Session Actions
+    createSession: (title?: string) => string
+    switchSession: (id: string) => void
+    deleteSession: (id: string) => void
+    updateSession: (id: string, updates: Partial<ChatSession>) => void
     clearHistory: () => void
 }

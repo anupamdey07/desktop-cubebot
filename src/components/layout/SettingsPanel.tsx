@@ -24,7 +24,7 @@ const PROVIDER_MODELS = {
 
 export function SettingsPanel() {
     const [open, setOpen] = useState(false)
-    const { settings, updateSettings, clearHistory } = useChatStore()
+    const { settings, updateSettings, clearHistory, activeSkin, setSkin } = useChatStore()
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
     const [activePreset, setActivePreset] = useState('cartoon-robot')
 
@@ -107,6 +107,39 @@ export function SettingsPanel() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                                {/* Interface Skin - v6 Feature */}
+                                <section className="p-3 rounded-xl bg-indigo-50 border border-indigo-100 shadow-sm">
+                                    <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-tight mb-3 flex items-center gap-2">
+                                        <Bot size={14} className="text-indigo-600" />
+                                        Interface Skin
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button 
+                                            onClick={() => setSkin('cubebot')}
+                                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+                                                activeSkin === 'cubebot' 
+                                                ? 'bg-white border-indigo-300 text-indigo-700 shadow-sm' 
+                                                : 'bg-indigo-100/50 border-transparent text-indigo-400 opacity-60'
+                                            }`}
+                                        >
+                                            Classic Bot
+                                        </button>
+                                        <button 
+                                            onClick={() => setSkin('frontier')}
+                                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+                                                activeSkin === 'frontier' 
+                                                ? 'bg-white border-indigo-300 text-indigo-700 shadow-sm' 
+                                                : 'bg-indigo-100/50 border-transparent text-indigo-400 opacity-60'
+                                            }`}
+                                        >
+                                            Frontier UI
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-indigo-600/70 mt-2 font-medium">
+                                        Frontier skin adds a sidebar for history & tags.
+                                    </p>
+                                </section>
+
                                 {/* Unhinged Toggle - Promoted to top! */}
                                 <section className="p-3 rounded-xl bg-purple-50 border border-purple-100 shadow-sm">
                                     <div className="flex items-center justify-between">

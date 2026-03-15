@@ -7,7 +7,8 @@ import type { Message } from '../types'
 
 export function useCubeBotChat() {
     const {
-        messages,
+        sessions,
+        currentSessionId,
         isStreaming,
         settings,
         addMessage,
@@ -20,7 +21,10 @@ export function useCubeBotChat() {
 
     const send = useCallback(
         async (userText: string) => {
-            if (isStreaming) return
+            if (isStreaming || !currentSessionId) return
+
+            const currentSession = sessions[currentSessionId]
+            if (!currentSession) return
 
             // ── Command Interceptor — handle /help, /model, /clear etc ──
             const trimmed = userText.trim()
@@ -34,12 +38,12 @@ export function useCubeBotChat() {
                 }
 
                 if (command === '/help') {
-                    addMessage({ role: 'user', content: userText })
-                    addMessage({ 
+                    addMessage(currentSessionId, { role: 'user', content: userText })
+                    addMessage(currentSessionId, { 
                         role: 'assistant', 
                         content: "[FOCUS] I've got you, boss! Here are the core local commands:\n\n" +
                                  "• `/model [kind]` — Change brain (kimi, groq, ollama-local)\n" +
-                                 "• `/clear` — Wipe the memory logs\n" +
+                                 "• `/clear` — Wipe the current conversation\n" +
                                  "• `/temp [0-1]` — Set my creative temperature\n" +
                                  "• `/help` — Show this guide"
                     })
@@ -57,10 +61,10 @@ export function useCubeBotChat() {
 
                     if (target && mapping[target]) {
                         useChatStore.getState().updateSettings(mapping[target])
-                        addMessage({ role: 'user', content: userText })
-                        addMessage({ role: 'assistant', content: `[BOOT] Protocol shift complete. Now running on **${target}** architecture.` })
+                        addMessage(currentSessionId, { role: 'user', content: userText })
+                        addMessage(currentSessionId, { role: 'assistant', content: `[BOOT] Protocol shift complete. Now running on **${target}** architecture.` })
                     } else {
-                        addMessage({ role: 'assistant', content: `[WARN] Unknown model. Try: /model [kimi | groq | ollama]` })
+                        addMessage(currentSessionId, { role: 'assistant', content: `[WARN] Unknown model. Try: /model [kimi | groq | ollama]` })
                     }
                     return
                 }
@@ -69,10 +73,10 @@ export function useCubeBotChat() {
                     const val = parseFloat(args[0])
                     if (!isNaN(val) && val >= 0 && val <= 1) {
                         useChatStore.getState().updateSettings({ temperature: val })
-                        addMessage({ role: 'user', content: userText })
-                        addMessage({ role: 'assistant', content: `[FOCUS] Temperature calibrated to **${val}**. I am now feeling ${val > 0.7 ? 'quite creative' : 'very precise'}.` })
+                        addMessage(currentSessionId, { role: 'user', content: userText })
+                        addMessage(currentSessionId, { role: 'assistant', content: `[FOCUS] Temperature calibrated to **${val}**. I am now feeling ${val > 0.7 ? 'quite creative' : 'very precise'}.` })
                     } else {
-                        addMessage({ role: 'assistant', content: `[WARN] Invalid temperature. Use a number between 0 and 1.` })
+                        addMessage(currentSessionId, { role: 'assistant', content: `[WARN] Invalid temperature. Use a number between 0 and 1.` })
                     }
                     return
                 }
@@ -93,10 +97,10 @@ export function useCubeBotChat() {
             }
 
             // Add user message
-            const userMsg = addMessage({ role: 'user', content: userText })
+            const userMsg = addMessage(currentSessionId, { role: 'user', content: userText })
 
             // Add empty assistant placeholder
-            addMessage({ role: 'assistant', content: '' })
+            addMessage(currentSessionId, { role: 'assistant', content: '' })
 
             setStreaming(true)
             setBotStatus('thinking')
@@ -118,7 +122,7 @@ export function useCubeBotChat() {
             }
 
             const messagesWithContext: Message[] = [
-                ...messages,
+                ...currentSession.messages,
                 ...systemMsgs,
                 userMsg
             ]
@@ -148,7 +152,7 @@ export function useCubeBotChat() {
                         fullContent += token
                         // Strip mood tag from displayed text (e.g. "[HYPE] Great!" → "Great!")
                         const { cleanText } = parseMoodTag(fullContent)
-                        updateLastMessage(cleanText)
+                        updateLastMessage(currentSessionId, cleanText)
                     },
                     onComplete: () => {
                         setStreaming(false)
@@ -156,7 +160,7 @@ export function useCubeBotChat() {
 
                         // Final clean of mood tag from display
                         const { cleanText } = parseMoodTag(fullContent)
-                        updateLastMessage(cleanText)
+                        updateLastMessage(currentSessionId, cleanText)
 
                         // If voice is enabled, speak with mood-matched voice
                         if (settings.voiceEnabled && fullContent) {
@@ -170,7 +174,7 @@ export function useCubeBotChat() {
                         }
                     },
                     onError: (err: Error) => {
-                        updateLastMessage(`⚠️ ${err.message}`)
+                        updateLastMessage(currentSessionId, `⚠️ ${err.message}`)
                         setStreaming(false)
                         setBotStatus('error')
                         abortControllerRef.current = null
@@ -180,7 +184,7 @@ export function useCubeBotChat() {
                 }
             )
         },
-        [messages, isStreaming, settings, addMessage, updateLastMessage, setStreaming, setBotStatus]
+        [sessions, currentSessionId, isStreaming, settings, addMessage, updateLastMessage, setStreaming, setBotStatus]
     )
 
     const stop = useCallback(() => {
