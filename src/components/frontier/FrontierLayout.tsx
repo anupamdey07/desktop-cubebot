@@ -251,7 +251,7 @@ export function FrontierLayout() {
                 <div 
                     ref={scrollAreaRef}
                     onScroll={handleScroll}
-                    className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar scroll-smooth"
+                    className="flex-1 overflow-y-auto p-3 md:p-6 space-y-3 custom-scrollbar scroll-smooth"
                 >
                     <div className="max-w-3xl mx-auto space-y-4 pb-20">
                         {(!currentSession || currentSession.messages.filter(m => m.role !== 'system').length === 0) && (
