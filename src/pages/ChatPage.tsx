@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Volume2, VolumeX, Loader2, CheckCircle2, AlertCircle, Tag, Layout as LayoutIcon, RefreshCw } from 'lucide-react'
+import { Volume2, VolumeX, Loader2, CheckCircle2, AlertCircle, Tag, Layout as LayoutIcon, RefreshCw, History, Plus, Star, Trash2, X } from 'lucide-react'
 import { ComputerBot } from '../components/bot/CubeBot'
 import { ChatInput } from '../components/chat/ChatInput'
 import { SettingsPanel } from '../components/layout/SettingsPanel'
@@ -19,11 +19,20 @@ export function ChatPage() {
         updateSettings, 
         setEyeTarget,
         activeSkin,
-        setSkin
+        setSkin,
+        createSession,
+        switchSession,
+        deleteSession,
+        updateSession,
+        clearHistory,
+        setLatency,
+        setBotStatus
     } = useChatStore()
+    
     const { send, stop } = useCubeBotChat()
     const [showVoiceToast, setShowVoiceToast] = useState(false)
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
     const currentSession = sessions[currentSessionId]
     const messages = currentSession?.messages || []
@@ -73,12 +82,41 @@ export function ChatPage() {
         setTimeout(() => setShowVoiceToast(false), 1800)
     }
 
+    const sessionList = Object.values(sessions).sort((a, b) => {
+        if (a.isBookmarked && !b.isBookmarked) return -1
+        if (!a.isBookmarked && b.isBookmarked) return 1
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    })
+
     if (activeSkin === 'frontier') {
         return <FrontierLayout />
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-col items-center justify-start pt-8 pb-6 px-4">
+        <div className="min-h-screen bg-white flex flex-col items-center justify-start pt-8 pb-6 px-4 overflow-hidden">
+            {/* History Toggle Button (Left) */}
+            <div className="fixed top-4 left-4 z-50 flex items-center gap-2">
+                <motion.button
+                    onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                    whileTap={{ scale: 0.88 }}
+                    title="Conversation History"
+                    className={`w-9 h-9 rounded-xl border shadow-sm flex items-center justify-center transition-all duration-200 ${isHistoryOpen
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : 'bg-white border-slate-200 text-slate-400 hover:text-indigo-500 hover:border-indigo-200'
+                    }`}
+                >
+                    <History size={16} />
+                </motion.button>
+                
+                <motion.button
+                    onClick={() => createSession()}
+                    whileTap={{ scale: 0.88 }}
+                    title="New Chat"
+                    className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-indigo-500 hover:border-indigo-200 shadow-sm flex items-center justify-center transition-all"
+                >
+                    <Plus size={16} />
+                </motion.button>
+            </div>
             {/* Subtle page background dots */}
             <div
                 className="fixed inset-0 pointer-events-none opacity-40"
@@ -207,6 +245,80 @@ export function ChatPage() {
                     />
                 </div>
             </motion.div>
+
+            {/* History Sidebar Drawer */}
+            <AnimatePresence>
+                {isHistoryOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsHistoryOpen(false)}
+                            className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-40"
+                        />
+                        <motion.aside
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            className="fixed left-0 top-0 bottom-0 w-72 bg-white border-r border-slate-200 shadow-2xl z-50 flex flex-col overflow-hidden"
+                        >
+                            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <h3 className="font-display font-bold text-slate-700 text-sm flex items-center gap-2">
+                                    <History size={14} className="text-indigo-500" />
+                                    Past Threads
+                                </h3>
+                                <button onClick={() => setIsHistoryOpen(false)} className="p-1 hover:bg-slate-200 rounded-md text-slate-400">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                                {sessionList.map(s => (
+                                    <button
+                                        key={s.id}
+                                        onClick={() => { switchSession(s.id); setIsHistoryOpen(false); }}
+                                        className={`group relative flex items-center gap-2 w-full p-3 rounded-xl transition-all text-left ${
+                                            s.id === currentSessionId 
+                                            ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100' 
+                                            : 'text-slate-500 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <div className="flex-1 truncate">
+                                            <p className={`text-xs ${s.id === currentSessionId ? 'font-bold' : 'font-medium'}`}>
+                                                {s.title}
+                                            </p>
+                                            <p className="text-[9px] opacity-60 mt-0.5 font-mono">
+                                                {new Date(s.updatedAt).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+                                            <span 
+                                                onClick={(e) => { e.stopPropagation(); updateSession(s.id, { isBookmarked: !s.isBookmarked }) }}
+                                                className={`p-1 rounded-md hover:bg-white transition-colors ${s.isBookmarked ? 'text-amber-400' : 'text-slate-300'}`}
+                                            >
+                                                <Star size={11} fill={s.isBookmarked ? "currentColor" : "none"} />
+                                            </span>
+                                            <span 
+                                                onClick={(e) => { e.stopPropagation(); if(confirm('Delete this chat?')) deleteSession(s.id) }}
+                                                className="p-1 rounded-md hover:bg-red-50 text-slate-300 hover:text-red-400 transition-colors"
+                                            >
+                                                <Trash2 size={11} />
+                                            </span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            <div className="p-4 border-t border-slate-100 text-center">
+                                <p className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">Memory Bank V2.0</p>
+                            </div>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
