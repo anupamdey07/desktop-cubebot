@@ -9,12 +9,14 @@ model_list:
   - model_name: groq
     litellm_params:
       model: groq/llama-3.1-8b-instant
+      api_base: "https://api.groq.com/openai/v1"
       api_key: os.environ/GROQ_API_KEY
 
   # Provider 3: Moonshot Kimi (Deep Context Wisdom Fallback)
   - model_name: kimi
     litellm_params:
       model: moonshot/kimi-k2.5
+      api_base: "https://api.moonshot.cn/v1"
       api_key: os.environ/MOONSHOT_API_KEY
 
 # Intelligent Fallback Routing
