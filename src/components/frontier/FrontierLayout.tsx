@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Plus, Bookmark, Tag, Settings, Terminal, Send, Search, 
     PanelLeftClose, PanelLeftOpen, Trash2, Star, CheckCircle2, 
-    Loader2, AlertCircle, Edit2, RefreshCw
+    Loader2, AlertCircle, Edit2, RefreshCw, ArrowDown
 } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
 import { ChatInput } from '../chat/ChatInput'
@@ -29,6 +29,17 @@ export function FrontierLayout() {
     
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
     const [syncStatus, setSyncStatus] = React.useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
+    const [showScrollDown, setShowScrollDown] = React.useState(false)
+    const scrollAreaRef = React.useRef<HTMLDivElement>(null)
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
+        setShowScrollDown(scrollHeight - scrollTop - clientHeight > 300)
+    }
+
+    const scrollToBottom = () => {
+        scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })
+    }
 
     const currentSession = sessions[currentSessionId]
     const sessionList = Object.values(sessions).sort((a, b) => {
@@ -209,7 +220,11 @@ export function FrontierLayout() {
                 </header>
 
                 {/* Chat Area */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar scroll-smooth">
+                <div 
+                    ref={scrollAreaRef}
+                    onScroll={handleScroll}
+                    className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar scroll-smooth"
+                >
                     <div className="max-w-3xl mx-auto space-y-8 pb-20">
                         {(!currentSession || currentSession.messages.filter(m => m.role !== 'system').length === 0) && (
                             <div className="h-full flex flex-col items-center justify-center pt-20 text-center space-y-4">
@@ -247,6 +262,21 @@ export function FrontierLayout() {
                             </div>
                         ))}
                     </div>
+
+                    {/* Floating Scroll Down Button */}
+                    <AnimatePresence>
+                        {showScrollDown && (
+                            <motion.button
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                onClick={scrollToBottom}
+                                className="fixed bottom-32 right-8 w-10 h-10 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 transition-colors z-20"
+                            >
+                                <ArrowDown size={18} />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Input Area */}
