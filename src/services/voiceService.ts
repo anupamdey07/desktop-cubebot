@@ -247,11 +247,14 @@ export function stopWhisperListening() {
 
 /**
  * Browser Web Speech API STT
- * Uses continuous mode + interim results so that text accumulates
- * as the user speaks and is reliably delivered when they click stop.
+ *
+ * Design:
+ * - `continuous:true` keeps capturing until user clicks stop
+ * - Only FINAL results are accumulated (no interim flicker)
+ * - Transcript lives in a closure, not module scope, so no shared-state bugs
+ * - onRecordingStateChange(true) is fired immediately (synchronously) before .start()
+ *   so the button enters pulsing state right away without waiting for onstart
  */
-let _accumulatedTranscript = ''
-
 export function startListening(callbacks: ListenCallback, lang = 'en-US') {
     const SpeechRecognitionCtor =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -261,82 +264,88 @@ export function startListening(callbacks: ListenCallback, lang = 'en-US') {
         return
     }
 
-    // Unlock TTS while we have user gesture context
     unlockSpeech()
 
-    _accumulatedTranscript = ''
-    recognitionInstance = new SpeechRecognitionCtor()
-    recognitionInstance.lang = lang
-    recognitionInstance.interimResults = true   // Stream partial results
-    recognitionInstance.maxAlternatives = 1
-    recognitionInstance.continuous = true       // Keep listening until user stops
+    // Tell the UI we are recording IMMEDIATELY (synchronous, before browser async onstart)
+    callbacks.onRecordingStateChange?.(true)
     
-    console.log(`[STT] Starting Web Speech API (continuous, lang=${lang})`)
+    let finalTranscript = ''
 
-    recognitionInstance.onresult = (event: any) => {
-        // Build full transcript from all results so far
-        let finalText = ''
-        let interimText = ''
-        for (let i = 0; i < event.results.length; i++) {
-            const result = event.results[i]
-            if (result.isFinal) {
-                finalText += result[0].transcript
-            } else {
-                interimText += result[0].transcript
+    const rec = new SpeechRecognitionCtor()
+    rec.lang = lang
+    rec.interimResults = false  // Only fire when a full sentence is ready
+    rec.maxAlternatives = 1
+    rec.continuous = true       // Keep mic open until user clicks stop
+
+    console.log(`[STT] startListening called — lang=${lang}`)
+
+    rec.onstart = () => {
+        console.log('[STT] onstart fired — browser mic is open')
+    }
+
+    rec.onresult = (event: any) => {
+        // Accumulate only FINAL results
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+                const piece = event.results[i][0].transcript
+                finalTranscript += piece + ' '
+                console.log(`[STT] final chunk: "${piece}" | total: "${finalTranscript.trim()}"`)
             }
         }
-        
-        const fullText = (finalText + interimText).trim()
-        _accumulatedTranscript = fullText
-        console.log(`[STT] Transcript: "${fullText}" (final: ${finalText.length}, interim: ${interimText.length})`)
-        
-        // Deliver the latest accumulated text on every result event
-        if (fullText) {
-            callbacks.onResult(fullText)
+        // Update text box with what we have so far
+        if (finalTranscript.trim()) {
+            callbacks.onResult(finalTranscript.trim())
         }
     }
 
-    recognitionInstance.onerror = (event: any) => {
-        // 'aborted' fires when we call .stop() — this is expected, not an error
+    rec.onerror = (event: any) => {
         if (event.error === 'aborted') {
-            console.log('[STT] Recognition aborted (user stopped)')
+            // Expected when we call .stop() manually
+            console.log('[STT] aborted — user stopped')
             return
         }
+        console.error(`[STT] error: ${event.error}`)
         if (event.error === 'no-speech') {
-            callbacks.onError('No speech detected. Try again.')
+            callbacks.onError('No speech detected.')
         } else if (event.error === 'not-allowed') {
-            callbacks.onError('Microphone access denied. Check browser permissions.')
+            callbacks.onError('Microphone access denied.')
         } else {
             callbacks.onError(`Speech error: ${event.error}`)
         }
-        console.error(`[STT] Recognition Error: ${event.error}`)
     }
 
-    recognitionInstance.onend = () => {
-        console.log(`[STT] Recognition ended. Final text: "${_accumulatedTranscript}"`)
-        // Deliver final accumulated text if we have any
-        if (_accumulatedTranscript) {
-            callbacks.onResult(_accumulatedTranscript)
+    rec.onend = () => {
+        console.log(`[STT] onend — transcript: "${finalTranscript.trim()}"`)
+        // Deliver whatever we collected
+        if (finalTranscript.trim()) {
+            callbacks.onResult(finalTranscript.trim())
         }
         callbacks.onRecordingStateChange?.(false)
         callbacks.onEnd()
     }
 
-    recognitionInstance.onstart = () => {
-        console.log('[STT] Recognition started - listening for voice...')
-        callbacks.onRecordingStateChange?.(true)
-    }
+    recognitionInstance = rec
 
-    recognitionInstance.start()
+    try {
+        rec.start()
+        console.log('[STT] .start() called')
+    } catch (e: any) {
+        console.error('[STT] .start() threw:', e)
+        callbacks.onRecordingStateChange?.(false)
+        callbacks.onError(`Could not start: ${e.message}`)
+    }
 }
 
 export function stopListening() {
     if (recognitionInstance) {
-        console.log('[STT] Stopping recognition...')
+        console.log('[STT] stopListening called')
         recognitionInstance.stop()
         recognitionInstance = null
+    } else {
+        console.warn('[STT] stopListening called but no active instance')
     }
 }
+
 
 // ─── Text-to-Speech (Speaking) ───────────────────────────────────────────────
 

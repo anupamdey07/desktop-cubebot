@@ -89,7 +89,9 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
         }
 
         unlockSpeech()
-        setIsProcessing(true)
+        // For whisper, show processing spinner until recording starts
+        // For web speech, onRecordingStateChange fires synchronously so no spinner needed
+        if (settings.sttMode === 'whisper') setIsProcessing(true)
         
         const callbacks = {
             onResult: (transcript: string) => {
