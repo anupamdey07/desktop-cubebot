@@ -12,23 +12,13 @@ import {
 
 const PROVIDER_MODELS = {
     kimi: [
-        { value: 'moonshot-v1-8k', label: 'Kimi v1 · 8K context' },
-        { value: 'moonshot-v1-32k', label: 'Kimi v1 · 32K context' },
-        { value: 'moonshot-v1-128k', label: 'Kimi v1 · 128K context' },
+        { value: 'kimi', label: 'Kimi (Moonshot v1)' },
     ],
     groq: [
-        { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 · 70B (Fast)' },
-        { value: 'llama3-70b-8192', label: 'Llama 3 · 70B' },
-        { value: 'llama3-8b-8192', label: 'Llama 3 · 8B (Instant)' },
-        { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
+        { value: 'groq', label: 'Groq (Llama 3.1 8B)' },
     ],
     ollama: [
-        { value: 'llama3', label: 'Ollama Llama 3' },
-        { value: 'llama3:8b', label: 'Ollama Llama 3 (8B)' },
-        { value: 'mistral', label: 'Ollama Mistral' },
-        { value: 'phi3', label: 'Ollama Phi-3' },
-        { value: 'gemma2', label: 'Ollama Gemma 2' },
-        { value: 'qwen2', label: 'Ollama Qwen 2' }
+        { value: 'ollama-local', label: 'Local Ollama (Qwen 2.5 3B)' },
     ]
 }
 

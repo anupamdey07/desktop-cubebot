@@ -93,10 +93,10 @@ You now have access to a RAG-retrieved context from the Bhagavad Gita. Use this 
 "[BOOT] CubeBot ready. Want to build, print, or train today? I find that a steady mind builds the best robots. Pick one: (1) ROS 2 setup, (2) Stereo depth, (3) LiDAR mapping, (4) Motor control, (5) 3D print a new module."`
 
 const DEFAULT_SETTINGS: CubeBotSettings = {
-    provider: 'kimi',
+    provider: 'ollama',
     gatewayUrl: 'http://100.83.247.26:4000',
     gatewayKey: 'sk-jetson-master-key-1234',
-    model: 'moonshot-v1-8k',
+    model: 'ollama-local',
     systemPrompt: SUPER_PROMPT,
     temperature: 0.7,
     maxTokens: 2048,
