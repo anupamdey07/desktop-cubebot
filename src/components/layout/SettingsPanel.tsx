@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Cpu, Settings as SettingsIcon, X, Trash2, Key, Bot, Sliders, Volume2, Mic, Zap } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
@@ -75,8 +76,9 @@ export function SettingsPanel() {
                 <SettingsIcon size={16} />
             </button>
 
-            <AnimatePresence>
-                {open && (
+            {createPortal(
+                <AnimatePresence>
+                    {open && (
                     <>
                         <motion.div
                             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
@@ -209,10 +211,13 @@ export function SettingsPanel() {
                                                 type="text"
                                                 value={settings.gatewayUrl}
                                                 onChange={(e) => updateSettings({ gatewayUrl: e.target.value })}
-                                                placeholder="http://100.83.247.26:4000"
+                                                placeholder="https://cubebot-ubuntu.tailc63e0c.ts.net:10000"
                                                 className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-700 outline-none focus:border-indigo-300 transition-all font-mono"
                                             />
                                         </div>
+                                        <p className="text-[9px] text-indigo-500 font-medium leading-tight">
+                                            💡 Use Tailscale Funnel URL for secure HTTPS access from Vercel.
+                                        </p>
                                         <div>
                                             <label className="text-[10px] text-slate-500 font-semibold mb-1 flex justify-between">
                                                 Master Key
@@ -516,8 +521,10 @@ export function SettingsPanel() {
                             </div>
                         </motion.div>
                     </>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </>
     )
 }
