@@ -350,6 +350,41 @@ export function SettingsPanel() {
                                         </div>
                                     </section>
 
+                                    {/* STT Mode Selection */}
+                                    <section className="mb-4">
+                                        <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
+                                            <Cpu size={10} className="text-indigo-400" />
+                                            STT Engine
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button 
+                                                onClick={() => updateSettings({ sttMode: 'whisper' })}
+                                                className={`px-3 py-2 rounded-lg text-[10px] font-bold border transition-all ${
+                                                    settings.sttMode === 'whisper' 
+                                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                                                    : 'bg-white border-slate-200 text-slate-400'
+                                                }`}
+                                            >
+                                                Whisper (Local)
+                                            </button>
+                                            <button 
+                                                onClick={() => updateSettings({ sttMode: 'browser' })}
+                                                className={`px-3 py-2 rounded-lg text-[10px] font-bold border transition-all ${
+                                                    settings.sttMode === 'browser' 
+                                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                                                    : 'bg-white border-slate-200 text-slate-400'
+                                                }`}
+                                            >
+                                                Browser (Old)
+                                            </button>
+                                        </div>
+                                        <p className="text-[9px] text-slate-400 mt-1.5 leading-tight">
+                                            {settings.sttMode === 'whisper' 
+                                                ? 'Local Jetson AI. More private + accurate.' 
+                                                : 'Native browser engine. Faster fallback.'}
+                                        </p>
+                                    </section>
+
                                     {/* Rate */}
                                     <section className="mb-3">
                                         <label className="text-xs font-semibold text-slate-500 mb-2 flex justify-between uppercase tracking-wide">

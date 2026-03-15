@@ -5,6 +5,8 @@ import {
     isSTTSupported,
     startWhisperListening,
     stopWhisperListening,
+    startListening,
+    stopListening,
     isTTSSupported,
     stopSpeaking,
     isSpeaking as checkSpeaking,
@@ -81,53 +83,57 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
 
     const handleMicToggle = () => {
         if (isListening) {
-            stopWhisperListening()
+            if (settings.sttMode === 'whisper') stopWhisperListening()
+            else stopListening()
             return
         }
 
         unlockSpeech()
-        setIsProcessing(true) // Prep for processing
+        setIsProcessing(true)
         
-        startWhisperListening(
-            {
-                onResult: (transcript) => {
-                    const newText = transcript.trim()
-                    if (newText) {
-                        setText(newText)
-                        setIsProcessing(false)
-                        
-                        if (voiceEnabled) {
-                            setAutoSendCountdown(true)
-                            autoSendTimerRef.current = setTimeout(() => {
-                                onSend(newText)
-                                setText('')
-                                setAutoSendCountdown(false)
-                                autoSendTimerRef.current = null
-                                if (textareaRef.current) textareaRef.current.style.height = 'auto'
-                            }, 1000)
-                        }
-                    } else {
-                        setIsProcessing(false)
+        const callbacks = {
+            onResult: (transcript: string) => {
+                const newText = transcript.trim()
+                if (newText) {
+                    setText(newText)
+                    setIsProcessing(false)
+                    
+                    if (voiceEnabled) {
+                        setAutoSendCountdown(true)
+                        autoSendTimerRef.current = setTimeout(() => {
+                            onSend(newText)
+                            setText('')
+                            setAutoSendCountdown(false)
+                            autoSendTimerRef.current = null
+                            if (textareaRef.current) textareaRef.current.style.height = 'auto'
+                        }, 1000)
                     }
-                },
-                onEnd: () => {
-                    setIsListening(false)
+                } else {
                     setIsProcessing(false)
-                },
-                onError: (err) => {
-                    console.warn('Whisper error:', err)
-                    setIsListening(false)
-                    setIsProcessing(false)
-                    cancelAutoSend()
-                },
-                onRecordingStateChange: (recording) => {
-                    setIsListening(recording)
-                    if (recording) setIsProcessing(false)
-                    else setIsProcessing(true) // Transition to processing
                 }
             },
-            settings
-        )
+            onEnd: () => {
+                setIsListening(false)
+                setIsProcessing(false)
+            },
+            onError: (err: string) => {
+                console.warn('STT error:', err)
+                setIsListening(false)
+                setIsProcessing(false)
+                cancelAutoSend()
+            },
+            onRecordingStateChange: (recording: boolean) => {
+                setIsListening(recording)
+                if (recording) setIsProcessing(false)
+                else if (settings.sttMode === 'whisper') setIsProcessing(true) // Only whisper shows processing spinner
+            }
+        }
+
+        if (settings.sttMode === 'whisper') {
+            startWhisperListening(callbacks, settings)
+        } else {
+            startListening(callbacks, settings.sttLang)
+        }
     }
 
     const handleStopSpeaking = () => {

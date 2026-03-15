@@ -107,6 +107,7 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     voicePitch: 1.0,      // natural
     voiceRate: 0.95,      // steady delivery
     sttLang: 'en-US',
+    sttMode: 'whisper', 
     isUnhinged: false,
 }
 
@@ -265,6 +266,10 @@ export const useChatStore = create<ChatStore>()(
                 if (!validModels.includes(state.settings.model)) {
                     state.settings.model = 'ollama-local'
                     state.settings.provider = 'ollama'
+                }
+
+                if (!state.settings.sttMode) {
+                    state.settings.sttMode = 'whisper'
                 }
             },
         }
