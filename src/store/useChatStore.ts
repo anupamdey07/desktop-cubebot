@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     sttMode: 'browser',
     isUnhinged: false,
     karakeepUrl: 'https://cubebot-ubuntu.tailc63e0c.ts.net',
-    karakeepApiKey: 'ak2_0ce8bc803b52f61948cc_1c49d032a23cd88057455163aa934e3f',
+    karakeepApiKey: '', // Set via Settings panel — stored in localStorage, not in code
 }
 
 const generateId = () => Math.random().toString(36).slice(2, 11)
