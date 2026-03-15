@@ -1,0 +1,22 @@
+model_list:
+  - model_name: ollama-local
+    litellm_params:
+      model: ollama_chat/qwen2.5:3b
+      api_base: http://ollama:11434
+
+  - model_name: groq
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: kimi
+    litellm_params:
+      model: moonshot/moonshot-v1-8k
+      api_key: os.environ/MOONSHOT_API_KEY
+
+router_settings:
+  routing_strategy: latency-based-routing
+  enable_fallbacks: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
