@@ -107,17 +107,22 @@ function LCDDisplay({ status, isPetting }: LCDDisplayProps) {
     }
 
     if (status === 'speaking') {
+        const colors = [
+            'bg-green-400', 'bg-emerald-400', 'bg-cyan-400',
+            'bg-blue-400', 'bg-indigo-400', 'bg-violet-400',
+            'bg-fuchsia-400', 'bg-pink-400', 'bg-rose-400'
+        ]
         return (
-            <div className="flex items-end justify-center gap-[3px] h-full pb-2 px-2">
-                {Array.from({ length: 11 }).map((_, i) => (
+            <div className="flex items-end justify-between gap-[1px] h-full pb-2 px-2 w-full overflow-hidden">
+                {Array.from({ length: 42 }).map((_, i) => (
                     <div
                         key={i}
-                        className="mouth-bar bg-green-400"
+                        className={`mouth-bar ${colors[i % colors.length]}`}
                         style={{
                             width: 3,
                             height: '100%',
                             maxHeight: 24,
-                            animationDelay: `${i * 0.05}s`,
+                            animationDelay: `${(i * 0.03) % 0.4}s`,
                         }}
                     />
                 ))}
