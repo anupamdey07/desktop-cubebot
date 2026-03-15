@@ -3,13 +3,13 @@
     "name": "Desktop CubeBot",
     "icons": [
         {
-            "src": "/cubebot-icon.svg",
-            "type": "image/svg+xml",
+            "src": "/favicon-192x192.png",
+            "type": "image/png",
             "sizes": "192x192"
         },
         {
-            "src": "/cubebot-icon.svg",
-            "type": "image/svg+xml",
+            "src": "/favicon-512x512.png",
+            "type": "image/png",
             "sizes": "512x512"
         }
     ],
