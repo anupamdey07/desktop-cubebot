@@ -22,6 +22,62 @@ export function useCubeBotChat() {
         async (userText: string) => {
             if (isStreaming) return
 
+            // ── Command Interceptor — handle /help, /model, /clear etc ──
+            const trimmed = userText.trim()
+            if (trimmed.startsWith('/')) {
+                const [cmd, ...args] = trimmed.split(' ')
+                const command = cmd.toLowerCase()
+
+                if (command === '/clear') {
+                    useChatStore.getState().clearHistory()
+                    return
+                }
+
+                if (command === '/help') {
+                    addMessage({ role: 'user', content: userText })
+                    addMessage({ 
+                        role: 'assistant', 
+                        content: "[FOCUS] I've got you, boss! Here are the core local commands:\n\n" +
+                                 "• `/model [kind]` — Change brain (kimi, groq, ollama-local)\n" +
+                                 "• `/clear` — Wipe the memory logs\n" +
+                                 "• `/temp [0-1]` — Set my creative temperature\n" +
+                                 "• `/help` — Show this guide"
+                    })
+                    return
+                }
+
+                if (command === '/model') {
+                    const target = args[0]?.toLowerCase()
+                    const mapping: Record<string, { provider: any, model: string }> = {
+                        'kimi': { provider: 'kimi', model: 'kimi' },
+                        'groq': { provider: 'groq', model: 'groq' },
+                        'ollama': { provider: 'ollama', model: 'ollama-local' },
+                        'ollama-local': { provider: 'ollama', model: 'ollama-local' }
+                    }
+
+                    if (target && mapping[target]) {
+                        useChatStore.getState().updateSettings(mapping[target])
+                        addMessage({ role: 'user', content: userText })
+                        addMessage({ role: 'assistant', content: `[BOOT] Protocol shift complete. Now running on **${target}** architecture.` })
+                    } else {
+                        addMessage({ role: 'assistant', content: `[WARN] Unknown model. Try: /model [kimi | groq | ollama]` })
+                    }
+                    return
+                }
+
+                if (command === '/temp') {
+                    const val = parseFloat(args[0])
+                    if (!isNaN(val) && val >= 0 && val <= 1) {
+                        useChatStore.getState().updateSettings({ temperature: val })
+                        addMessage({ role: 'user', content: userText })
+                        addMessage({ role: 'assistant', content: `[FOCUS] Temperature calibrated to **${val}**. I am now feeling ${val > 0.7 ? 'quite creative' : 'very precise'}.` })
+                    } else {
+                        addMessage({ role: 'assistant', content: `[WARN] Invalid temperature. Use a number between 0 and 1.` })
+                    }
+                    return
+                }
+            }
+
             // Stop any current speaking before starting a new turn
             stopSpeaking()
 

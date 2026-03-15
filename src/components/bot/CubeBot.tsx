@@ -260,13 +260,13 @@ interface CubeBotProps {
 }
 
 export function ComputerBot({ messages, isStreaming }: CubeBotProps) {
-    const { botState } = useChatStore()
+    const { botState, settings } = useChatStore()
     const { status, eyeTarget } = botState
     const [isPetting, setIsPetting] = useState(false)
 
     return (
         <motion.div
-            className="flex flex-col items-center select-none w-full max-w-[92vw] sm:max-w-sm"
+            className="flex flex-col items-center select-text w-full max-w-[92vw] sm:max-w-sm"
             animate={
                 isPetting
                     ? { scale: [1, 1.04, 1], rotate: [0, -1.5, 1.5, 0] }
@@ -504,17 +504,22 @@ export function ComputerBot({ messages, isStreaming }: CubeBotProps) {
                 <div className="w-4 h-2 rounded-b-lg bg-zinc-800 shadow-md" />
             </div>
 
-            {/* Status pill */}
             <motion.div
                 key={status}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-3 px-4 py-1 rounded-full bg-white/90 shadow-sm border border-slate-100 text-[10px] text-slate-400 font-mono tracking-wide"
+                className="mt-3 px-4 py-1 rounded-full bg-white/90 shadow-sm border border-slate-100 text-[10px] text-slate-400 font-mono tracking-wide flex items-center gap-2"
             >
-                {status === 'idle' && '● ONLINE'}
-                {status === 'thinking' && '◌ PROCESSING…'}
-                {status === 'speaking' && '◉ TRANSMITTING'}
-                {status === 'error' && '✕ FAULT'}
+                <div>
+                    {status === 'idle' && '● ONLINE'}
+                    {status === 'thinking' && '◌ PROCESSING…'}
+                    {status === 'speaking' && '◉ TRANSMITTING'}
+                    {status === 'error' && '✕ FAULT'}
+                </div>
+                <div className="w-[1px] h-2 bg-slate-200" />
+                <div className="opacity-60 text-[9px] lowercase pt-0.5">
+                    prepared by {settings.model}
+                </div>
             </motion.div>
         </motion.div>
     )
