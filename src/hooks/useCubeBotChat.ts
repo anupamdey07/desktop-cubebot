@@ -21,7 +21,8 @@ export function useCubeBotChat() {
 
     const send = useCallback(
         async (userText: string) => {
-            if (isStreaming || !currentSessionId) return
+            const { isStreaming: currentStreaming } = useChatStore.getState()
+            if (currentStreaming || !currentSessionId) return
 
             const currentSession = sessions[currentSessionId]
             if (!currentSession) return

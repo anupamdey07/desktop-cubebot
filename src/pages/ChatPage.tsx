@@ -1,14 +1,14 @@
 import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Volume2, VolumeX } from 'lucide-react'
+import { Volume2, VolumeX, Loader2, CheckCircle2, AlertCircle, Tag, Layout as LayoutIcon } from 'lucide-react'
 import { ComputerBot } from '../components/bot/CubeBot'
 import { ChatInput } from '../components/chat/ChatInput'
 import { SettingsPanel } from '../components/layout/SettingsPanel'
 import { useChatStore } from '../store/useChatStore'
 import { useCubeBotChat } from '../hooks/useCubeBotChat'
 import { unlockSpeech, isTTSSupported, stopSpeaking } from '../services/voiceService'
-
 import { FrontierLayout } from '../components/frontier/FrontierLayout'
+import { syncSessionToKarakeep } from '../services/karakeepService'
 
 export function ChatPage() {
     const { 
@@ -18,13 +18,28 @@ export function ChatPage() {
         settings, 
         updateSettings, 
         setEyeTarget,
-        activeSkin 
+        activeSkin,
+        setSkin
     } = useChatStore()
     const { send, stop } = useCubeBotChat()
     const [showVoiceToast, setShowVoiceToast] = useState(false)
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
 
     const currentSession = sessions[currentSessionId]
     const messages = currentSession?.messages || []
+
+    const handleSync = async () => {
+        if (!currentSession || syncStatus === 'syncing') return
+        setSyncStatus('syncing')
+        try {
+            await syncSessionToKarakeep(currentSession)
+            setSyncStatus('success')
+            setTimeout(() => setSyncStatus('idle'), 3000)
+        } catch (err) {
+            setSyncStatus('error')
+            setTimeout(() => setSyncStatus('idle'), 5000)
+        }
+    }
 
     // Eye tracking — normalize cursor position to -1..1 from center
     const handleMouseMove = useCallback(
@@ -90,6 +105,42 @@ export function ChatPage() {
                         {settings.voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
                     </motion.button>
                 )}
+
+                {/* Web UI Toggle */}
+                <motion.button
+                    onClick={() => setSkin('frontier')}
+                    whileTap={{ scale: 0.88 }}
+                    title="Switch to Web UI"
+                    className="w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-indigo-500 hover:border-indigo-200 shadow-sm flex items-center justify-center transition-all"
+                >
+                    <LayoutIcon size={15} />
+                </motion.button>
+
+                {/* Karakeep Sync */}
+                <motion.button 
+                    onClick={handleSync}
+                    disabled={syncStatus === 'syncing'}
+                    whileTap={{ scale: 0.88 }}
+                    title="Sync to Karakeep"
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all shadow-sm ${
+                        syncStatus === 'success' 
+                        ? 'bg-green-50 border-green-200 text-green-600' 
+                        : syncStatus === 'error'
+                        ? 'bg-red-50 border-red-200 text-red-600'
+                        : 'bg-white border-slate-200 text-slate-400 hover:text-indigo-500 hover:border-indigo-200'
+                    }`}
+                >
+                    {syncStatus === 'syncing' ? (
+                        <Loader2 size={12} className="animate-spin" />
+                    ) : syncStatus === 'success' ? (
+                        <CheckCircle2 size={12} />
+                    ) : syncStatus === 'error' ? (
+                        <AlertCircle size={12} />
+                    ) : (
+                        <Tag size={12} />
+                    )}
+                </motion.button>
+                
                 <SettingsPanel />
             </div>
 
@@ -136,7 +187,14 @@ export function ChatPage() {
                 transition={{ duration: 0.4, delay: 0.25 }}
             >
                 <div className="input-shell rounded-none sm:rounded-2xl overflow-hidden min-h-[80px]">
-                    <ChatInput onSend={send} onStop={stop} isStreaming={isStreaming} />
+                    <ChatInput 
+                        onSend={(txt) => {
+                            const { isStreaming: liveStrm } = useChatStore.getState()
+                            if (!liveStrm) send(txt)
+                        }} 
+                        onStop={stop} 
+                        isStreaming={isStreaming} 
+                    />
                 </div>
             </motion.div>
         </div>

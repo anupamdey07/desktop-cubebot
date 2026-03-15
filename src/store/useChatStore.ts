@@ -94,8 +94,9 @@ You now have access to a RAG-retrieved context from the Bhagavad Gita. Use this 
 
 const DEFAULT_SETTINGS: CubeBotSettings = {
     provider: 'ollama',
-    gatewayUrl: 'http://100.83.247.26:4000',
+    gatewayUrl: 'http://192.168.0.152:4000',
     gatewayKey: 'sk-jetson-master-key-1234',
+    whisperUrl: 'http://192.168.0.152:8082',
     model: 'ollama-local',
     systemPrompt: SUPER_PROMPT,
     temperature: 0.7,

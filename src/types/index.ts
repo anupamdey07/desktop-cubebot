@@ -30,6 +30,7 @@ export interface CubeBotSettings {
     provider: AIProvider
     gatewayUrl: string      // LiteLLM Gateway URL
     gatewayKey: string      // LiteLLM Master Key
+    whisperUrl: string      // Whisper STT URL (port 8082)
     model: string
     systemPrompt: string
     temperature: number

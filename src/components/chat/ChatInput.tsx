@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, StopCircle, Mic, MicOff, Volume2 } from 'lucide-react'
+import { Send, StopCircle, Mic, MicOff, Volume2, Loader2 } from 'lucide-react'
 import {
     isSTTSupported,
-    startListening,
-    stopListening,
+    startWhisperListening,
+    stopWhisperListening,
     isTTSSupported,
     stopSpeaking,
     isSpeaking as checkSpeaking,
@@ -23,11 +23,13 @@ interface ChatInputProps {
 export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputProps) {
     const [text, setText] = useState('')
     const [isListening, setIsListening] = useState(false)
+    const [isProcessing, setIsProcessing] = useState(false)
     const [isSpeakingNow, setIsSpeakingNow] = useState(false)
     const [autoSendCountdown, setAutoSendCountdown] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const autoSendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const voiceEnabled = useChatStore((s) => s.settings.voiceEnabled)
+    const { settings } = useChatStore()
+    const voiceEnabled = settings.voiceEnabled
 
     const canSend = text.trim().length > 0 && !isStreaming && !disabled
     const hasVoice = isSTTSupported()
@@ -79,42 +81,53 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
 
     const handleMicToggle = () => {
         if (isListening) {
-            stopListening()
-            setIsListening(false)
-            cancelAutoSend()
+            stopWhisperListening()
             return
         }
 
-        // unlockSpeech() here — direct user click = Chrome autoplay gesture
         unlockSpeech()
-        setIsListening(true)
-        startListening({
-            onResult: (transcript) => {
-                const newText = transcript.trim()
-                setText(newText)
-                setIsListening(false)
-
-                // Auto-send after 1s if voice toggle is on
-                if (voiceEnabled && newText) {
-                    setAutoSendCountdown(true)
-                    autoSendTimerRef.current = setTimeout(() => {
-                        onSend(newText)
-                        setText('')
-                        setAutoSendCountdown(false)
-                        autoSendTimerRef.current = null
-                        if (textareaRef.current) textareaRef.current.style.height = 'auto'
-                    }, 1000)
+        setIsProcessing(true) // Prep for processing
+        
+        startWhisperListening(
+            {
+                onResult: (transcript) => {
+                    const newText = transcript.trim()
+                    if (newText) {
+                        setText(newText)
+                        setIsProcessing(false)
+                        
+                        if (voiceEnabled) {
+                            setAutoSendCountdown(true)
+                            autoSendTimerRef.current = setTimeout(() => {
+                                onSend(newText)
+                                setText('')
+                                setAutoSendCountdown(false)
+                                autoSendTimerRef.current = null
+                                if (textareaRef.current) textareaRef.current.style.height = 'auto'
+                            }, 1000)
+                        }
+                    } else {
+                        setIsProcessing(false)
+                    }
+                },
+                onEnd: () => {
+                    setIsListening(false)
+                    setIsProcessing(false)
+                },
+                onError: (err) => {
+                    console.warn('Whisper error:', err)
+                    setIsListening(false)
+                    setIsProcessing(false)
+                    cancelAutoSend()
+                },
+                onRecordingStateChange: (recording) => {
+                    setIsListening(recording)
+                    if (recording) setIsProcessing(false)
+                    else setIsProcessing(true) // Transition to processing
                 }
             },
-            onEnd: () => {
-                setIsListening(false)
-            },
-            onError: (err) => {
-                console.warn('STT error:', err)
-                setIsListening(false)
-                cancelAutoSend()
-            },
-        })
+            settings
+        )
     }
 
     const handleStopSpeaking = () => {
@@ -128,25 +141,36 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
             {hasVoice && (
                 <motion.button
                     onClick={handleMicToggle}
+                    disabled={isProcessing}
                     className={`mb-0.5 w-9 h-9 rounded-xl flex items-center justify-center transition-all flex-shrink-0 ${isListening
                         ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
+                        : isProcessing
+                        ? 'bg-slate-50 text-indigo-500'
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 border border-slate-200'
                         }`}
                     whileTap={{ scale: 0.9 }}
-                    title={isListening ? 'Stop listening' : 'Voice input'}
+                    title={isListening ? 'Stop listening' : isProcessing ? 'Transcribing...' : 'Voice input'}
                 >
-                    {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                    {isProcessing ? (
+                        <Loader2 size={14} className="animate-spin" />
+                    ) : isListening ? (
+                        <MicOff size={14} />
+                    ) : (
+                        <Mic size={14} />
+                    )}
                 </motion.button>
             )}
 
             {/* Text area */}
             <textarea
                 ref={textareaRef}
+                id="cubebot-message-input"
+                name="message"
                 value={text}
                 onChange={(e) => { cancelAutoSend(); setText(e.target.value) }}
                 onKeyDown={handleKeyDown}
                 onInput={handleInput}
-                placeholder={autoSendCountdown ? 'Sending…' : isListening ? 'Listening…' : 'Message CubeBot…'}
+                placeholder={autoSendCountdown ? 'Sending…' : isProcessing ? 'Transcribing…' : isListening ? 'Listening…' : 'Message CubeBot…'}
                 disabled={disabled || isListening}
                 rows={1}
                 className="flex-1 bg-transparent resize-none border-0 outline-none text-sm text-slate-700 placeholder-slate-400 py-2 leading-relaxed max-h-28 font-sans"

@@ -111,7 +111,7 @@ export function SettingsPanel() {
                                 <section className="p-3 rounded-xl bg-indigo-50 border border-indigo-100 shadow-sm">
                                     <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-tight mb-3 flex items-center gap-2">
                                         <Bot size={14} className="text-indigo-600" />
-                                        Interface Skin
+                                        Primary Interface
                                     </h4>
                                     <div className="grid grid-cols-2 gap-2">
                                         <button 
@@ -122,7 +122,7 @@ export function SettingsPanel() {
                                                 : 'bg-indigo-100/50 border-transparent text-indigo-400 opacity-60'
                                             }`}
                                         >
-                                            Classic Bot
+                                            Cubebot UI
                                         </button>
                                         <button 
                                             onClick={() => setSkin('frontier')}
@@ -132,11 +132,11 @@ export function SettingsPanel() {
                                                 : 'bg-indigo-100/50 border-transparent text-indigo-400 opacity-60'
                                             }`}
                                         >
-                                            Frontier UI
+                                            Web UI
                                         </button>
                                     </div>
                                     <p className="text-[10px] text-indigo-600/70 mt-2 font-medium">
-                                        Frontier skin adds a sidebar for history & tags.
+                                        Web UI (Frontier) adds a persistent history sidebar.
                                     </p>
                                 </section>
 
@@ -220,6 +220,17 @@ export function SettingsPanel() {
                                                 onChange={(e) => updateSettings({ gatewayKey: e.target.value })}
                                                 placeholder="sk-jetson-master..."
                                                 className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-700 outline-none focus:border-indigo-300 transition-all font-mono"
+                                            />
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-100">
+                                            <label className="text-[10px] text-indigo-500 font-bold mb-1 block uppercase tracking-tighter">Whisper STT URL (Port 8082)</label>
+                                            <input
+                                                type="text"
+                                                value={settings.whisperUrl}
+                                                onChange={(e) => updateSettings({ whisperUrl: e.target.value })}
+                                                placeholder="http://192.168.0.152:8082"
+                                                className="w-full bg-indigo-50/50 border border-indigo-100 rounded-lg px-2.5 py-1.5 text-[11px] text-indigo-700 outline-none focus:border-indigo-300 transition-all font-mono"
                                             />
                                         </div>
                                     </div>
