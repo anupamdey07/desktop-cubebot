@@ -220,6 +220,8 @@ export function stopListening() {
 // ─── Text-to-Speech (Speaking) ───────────────────────────────────────────────
 
 let currentUtterance: SpeechSynthesisUtterance | null = null
+let speakQueue: SpeechSynthesisUtterance[] = []
+let isProcessingQueue = false
 
 export function isTTSSupported(): boolean {
     return 'speechSynthesis' in window
@@ -280,9 +282,39 @@ interface SpeakOptions {
 }
 
 /**
+ * Internal queue processor for short chunks
+ */
+function processQueue(options: SpeakOptions) {
+    if (speakQueue.length === 0) {
+        isProcessingQueue = false
+        options.onEnd?.()
+        return
+    }
+
+    isProcessingQueue = true
+    const utterance = speakQueue.shift()!
+    currentUtterance = utterance
+
+    utterance.onend = () => {
+        processQueue(options) // advance queue
+    }
+
+    utterance.onerror = (e) => {
+        if (e.error === 'interrupted' || e.error === 'canceled') {
+            speakQueue = []
+            options.onEnd?.()
+            return
+        }
+        speakQueue = []
+        options.onError?.(`Speech error: ${e.error}`)
+    }
+
+    window.speechSynthesis.speak(utterance)
+}
+
+/**
  * Speak text with CubeBot's voice settings.
- * IMPORTANT: Chrome requires this to ultimately originate from a user gesture.
- * Call unlockSpeech() once on first user interaction to warm up the context.
+ * We split long paragraphs into sentences to bypass the Chrome 15-second TTS hang bug.
  */
 export function speak(
     text: string,
@@ -294,76 +326,49 @@ export function speak(
         return
     }
 
-    // Cancel any ongoing speech
+    // Cancel any ongoing speech and clear queue
     window.speechSynthesis.cancel()
+    speakQueue = []
+    isProcessingQueue = false
+    currentUtterance = null
 
     // Clamp to valid ranges per MDN spec
     const pitch = Math.max(0, Math.min(2, settings.voicePitch))
     const rate = Math.max(0.1, Math.min(10, settings.voiceRate))
 
-    // Truncate very long responses to prevent browser timeout
+    // Truncate very long responses heavily, then chunk by punctuation
     const MAX_CHARS = 4000
-    const spokenText = text.length > MAX_CHARS
-        ? text.slice(0, MAX_CHARS) + '… parts truncated for length.'
-        : text
+    const cleanText = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) + '… truncated.' : text
 
-    // Create utterance
-    const utterance = new SpeechSynthesisUtterance(spokenText)
-    currentUtterance = utterance
-    utterance.pitch = pitch
-    utterance.rate = rate
-    utterance.volume = 1.0
+    // Regex splits by sentence boundary (greedy dot/exclamation/question mark followed by space)
+    const sentences = cleanText.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [cleanText]
 
     // Pick voice (may return null if voices not loaded yet)
     const voice = resolveVoice(settings.voiceName)
-    if (voice) utterance.voice = voice
 
-    // Tracking for cleanup
-    let keepAlive: any = null
+    sentences.forEach((sentence, index) => {
+        const utterance = new SpeechSynthesisUtterance(sentence)
+        utterance.pitch = pitch
+        utterance.rate = rate
+        utterance.volume = 1.0
+        if (voice) utterance.voice = voice
 
-    const cleanup = () => {
-        if (keepAlive) {
-            clearInterval(keepAlive)
-            keepAlive = null
+        // Trigger onStart only for the very first chunk in the sequence
+        if (index === 0) {
+            utterance.onstart = () => options.onStart?.()
         }
-        currentUtterance = null
-    }
 
-    utterance.onstart = () => options.onStart?.()
+        speakQueue.push(utterance)
+    })
 
-    utterance.onend = () => {
-        cleanup()
-        options.onEnd?.()
-    }
-
-    utterance.onerror = (e) => {
-        cleanup()
-        // 'interrupted' or 'canceled' happens when we start a new voice line
-        // We still need to call onEnd so the state machine doesn't hang
-        if (e.error === 'interrupted' || e.error === 'canceled') {
-            options.onEnd?.()
-            return
-        }
-        options.onError?.(`Speech error: ${e.error}`)
-    }
-
-    window.speechSynthesis.speak(utterance)
-
-    // Chrome bug workaround: speech synthesis pauses after ~15 seconds.
-    // Keep it alive by calling resume() periodically.
-    keepAlive = setInterval(() => {
-        if (!window.speechSynthesis.speaking) {
-            cleanup()
-            return
-        }
-        window.speechSynthesis.pause()
-        window.speechSynthesis.resume()
-    }, 10000)
+    processQueue(options)
 }
 
 export function stopSpeaking() {
+    speakQueue = []
     window.speechSynthesis.cancel()
     currentUtterance = null
+    isProcessingQueue = false
 }
 
 export function isSpeaking(): boolean {
