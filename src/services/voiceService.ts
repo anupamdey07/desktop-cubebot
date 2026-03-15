@@ -468,7 +468,23 @@ export function speak(
 
     // Truncate very long responses heavily, then chunk by punctuation
     const MAX_CHARS = 4000
-    const cleanText = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) + '… truncated.' : text
+    const rawText = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) + '… truncated.' : text
+
+    // Strip emojis, markdown syntax, and decorative characters before speaking
+    const cleanText = rawText
+        .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')   // emoji ranges (emoticons, symbols, misc)
+        .replace(/[\u{2600}-\u{26FF}]/gu, '')       // misc symbols (☀️ ⚡ ✅ etc)
+        .replace(/[\u{2700}-\u{27BF}]/gu, '')       // dingbats
+        .replace(/[\u{FE00}-\u{FE0F}]/gu, '')       // variation selectors
+        .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')     // flags
+        .replace(/\*\*(.*?)\*\*/g, '$1')             // **bold** → bold
+        .replace(/\*(.*?)\*/g, '$1')                 // *italic* → italic
+        .replace(/`{1,3}[^`]*`{1,3}/g, '')          // `code` / ```code``` → remove
+        .replace(/#{1,6}\s/g, '')                    // ## Heading → Heading
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')    // [text](url) → text
+        .replace(/[>\-_~|]/g, ' ')                   // blockquote/list/hr chars → space
+        .replace(/\s{2,}/g, ' ')                     // collapse multiple spaces
+        .trim()
 
     // Regex splits by sentence boundary (greedy dot/exclamation/question mark followed by space)
     const sentences = cleanText.match(/[^.!?]+[.!?]+|\s*[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) || [cleanText]
