@@ -36,11 +36,13 @@ export interface ChatStore {
     isStreaming: boolean
     botState: BotState
     settings: CubeBotSettings
+    lastLatency?: number
     addMessage: (msg: Omit<Message, 'id' | 'timestamp'>) => Message
     updateLastMessage: (content: string) => void
     setStreaming: (v: boolean) => void
     setBotStatus: (status: BotState['status']) => void
     setEyeTarget: (pos: { x: number; y: number }) => void
     updateSettings: (s: Partial<CubeBotSettings>) => void
+    setLatency: (ms: number) => void
     clearHistory: () => void
 }

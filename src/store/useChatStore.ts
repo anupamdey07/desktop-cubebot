@@ -149,6 +149,8 @@ export const useChatStore = create<ChatStore>()(
             updateSettings: (s) =>
                 set((state) => ({ settings: { ...state.settings, ...s } })),
 
+            setLatency: (ms) => set({ lastLatency: ms }),
+
             clearHistory: () => set({ messages: [] }),
         }),
         {

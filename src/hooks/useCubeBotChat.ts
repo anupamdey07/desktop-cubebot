@@ -101,6 +101,7 @@ export function useCubeBotChat() {
             setStreaming(true)
             setBotStatus('thinking')
 
+            const startTime = Date.now()
             abortControllerRef.current = new AbortController()
             let fullContent = ''
             let firstToken = true
@@ -131,12 +132,16 @@ export function useCubeBotChat() {
                 }
                 : settings
 
+            const { setLatency } = useChatStore.getState()
+
             await streamChatCompletion(
                 messagesWithContext,
                 activeSettings,
                 {
                     onMessage: (token: string) => {
                         if (firstToken) {
+                            const ttft = Date.now() - startTime
+                            setLatency(ttft)
                             setBotStatus('speaking')
                             firstToken = false
                         }

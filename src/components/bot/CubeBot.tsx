@@ -260,9 +260,16 @@ interface CubeBotProps {
 }
 
 export function ComputerBot({ messages, isStreaming }: CubeBotProps) {
-    const { botState, settings } = useChatStore()
+    const { botState, settings, lastLatency } = useChatStore()
     const { status, eyeTarget } = botState
     const [isPetting, setIsPetting] = useState(false)
+
+    // Helper to format latency and pick a color
+    const getLatencyColor = (ms: number) => {
+        if (ms < 300) return 'text-green-500'
+        if (ms < 1000) return 'text-amber-500'
+        return 'text-rose-400'
+    }
 
     return (
         <motion.div
@@ -510,15 +517,31 @@ export function ComputerBot({ messages, isStreaming }: CubeBotProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-3 px-4 py-1 rounded-full bg-white/90 shadow-sm border border-slate-100 text-[10px] text-slate-400 font-mono tracking-wide flex items-center gap-2"
             >
-                <div>
-                    {status === 'idle' && '● ONLINE'}
-                    {status === 'thinking' && '◌ PROCESSING…'}
-                    {status === 'speaking' && '◉ TRANSMITTING'}
-                    {status === 'error' && '✕ FAULT'}
+                <div className="flex items-center gap-1.5">
+                    <span className={status === 'error' ? 'text-rose-500' : 'text-green-500'}>
+                        {status === 'idle' && '●'}
+                        {status === 'thinking' && '◌'}
+                        {status === 'speaking' && '◉'}
+                        {status === 'error' && '✕'}
+                    </span>
+                    <span>
+                        {status === 'idle' && 'ONLINE'}
+                        {status === 'thinking' && 'PROCESSING'}
+                        {status === 'speaking' && 'TRANSMITTING'}
+                        {status === 'error' && 'FAULT'}
+                    </span>
                 </div>
                 <div className="w-[1px] h-2 bg-slate-200" />
-                <div className="opacity-60 text-[9px] lowercase pt-0.5">
-                    prepared by {settings.model}
+                <div className="opacity-60 text-[9px] lowercase flex items-center gap-1.5">
+                    <span>prepared by {settings.model}</span>
+                    {lastLatency && (
+                        <>
+                            <span className="text-[10px] opacity-40">/</span>
+                            <span className={getLatencyColor(lastLatency)}>
+                                {lastLatency}ms
+                            </span>
+                        </>
+                    )}
                 </div>
             </motion.div>
         </motion.div>
