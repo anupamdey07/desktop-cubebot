@@ -308,7 +308,11 @@ export function FrontierLayout() {
                                     <div className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50">
                                         {m.role === 'user' ? 'YOU' : 'CUBEBOT'}
                                     </div>
-                                    <div className="text-[15px] sm:text-[16px] prose prose-slate max-w-none prose-p:my-0 prose-ul:my-1 prose-li:my-0 prose-headings:my-1">
+                                    <div className={`text-[15px] sm:text-[16px] prose max-w-none prose-p:my-0 prose-ul:my-1 prose-li:my-0 prose-headings:my-1 ${
+                                        m.role === 'user'
+                                        ? 'prose-invert text-white prose-p:text-white prose-headings:text-white prose-strong:text-white prose-a:text-blue-200'
+                                        : 'prose-slate text-slate-800'
+                                    }`}>
                                         {m.content ? (
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {m.content}
