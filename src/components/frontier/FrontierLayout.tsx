@@ -179,8 +179,8 @@ export function FrontierLayout() {
             {/* Main Content */}
             <main className="flex-1 flex flex-col relative h-full bg-white">
                 {/* Top Bar / Model Selector */}
-                <header className="h-14 border-b border-slate-100 bg-white/80 backdrop-blur-md flex items-center px-4 justify-between shrink-0 z-10">
-                    <div className="flex items-center gap-3">
+                <header className="h-auto min-h-[56px] py-1.5 border-b border-slate-100 bg-white/80 backdrop-blur-md flex flex-wrap items-center px-3 sm:px-4 justify-between gap-y-2 shrink-0 z-10 w-full overflow-hidden">
+                    <div className="flex items-center gap-1 sm:gap-3">
                         {!isSidebarOpen && (
                             <button 
                                 onClick={() => setIsSidebarOpen(true)}
@@ -208,7 +208,7 @@ export function FrontierLayout() {
                                         provider: m === 'ollama-local' ? 'ollama' : (m as any),
                                         temperature: m === 'kimi' ? 1.0 : settings.temperature
                                     })}
-                                    className={`px-4 py-1 rounded-full text-[11px] font-black tracking-tight transition-all duration-200 ${
+                                    className={`px-2 sm:px-4 py-1 rounded-full text-[10px] sm:text-[11px] font-black tracking-tight transition-all duration-200 ${
                                         settings.model === m 
                                         ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' 
                                         : 'text-slate-500 hover:text-slate-700'
@@ -250,7 +250,7 @@ export function FrontierLayout() {
                         <button 
                             onClick={handleSync}
                             disabled={syncStatus === 'syncing'}
-                            className={`group flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border ${
+                            className={`group flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all border ${
                                 syncStatus === 'success' 
                                 ? 'bg-green-50 border-green-200 text-green-600' 
                                 : syncStatus === 'error'
@@ -267,10 +267,12 @@ export function FrontierLayout() {
                             ) : (
                                 <Tag size={12} className="opacity-50 group-hover:opacity-100" />
                             )}
-                            {syncStatus === 'syncing' ? 'SYNCING...' : syncStatus === 'success' ? 'SYNCED' : syncStatus === 'error' ? 'FAILED' : 'SYNC TO KARAKEEP'}
+                            <span className="hidden sm:inline">
+                                {syncStatus === 'syncing' ? 'SYNCING...' : syncStatus === 'success' ? 'SYNCED' : syncStatus === 'error' ? 'FAILED' : 'SYNC TO KARAKEEP'}
+                            </span>
                         </button>
                         
-                        <div className="flex items-center gap-2 bg-slate-50 pl-1 pr-3 py-1 rounded-full border border-slate-200/50">
+                        <div className="hidden sm:flex items-center gap-2 bg-slate-50 pl-1 pr-3 py-1 rounded-full border border-slate-200/50">
                             <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[10px]">
                                 AD
                             </div>
@@ -298,15 +300,15 @@ export function FrontierLayout() {
                         
                         {currentSession?.messages.filter(m => m.role !== 'system').map(m => (
                             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm relative ${
+                                    <div className={`max-w-[90%] sm:max-w-[80%] rounded-2xl px-4 py-3 shadow-sm relative ${
                                     m.role === 'user' 
                                     ? 'bg-indigo-600 text-white rounded-tr-none' 
-                                    : 'bg-white text-slate-800 border border-slate-200/50 rounded-tl-none font-sans leading-snug'
+                                    : 'bg-white text-slate-800 border border-slate-200/50 rounded-tl-none font-sans leading-relaxed'
                                 }`}>
-                                    <div className="text-[10px] font-bold uppercase tracking-widest mb-0.5 opacity-50">
+                                    <div className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-50">
                                         {m.role === 'user' ? 'YOU' : 'CUBEBOT'}
                                     </div>
-                                    <div className="text-[14px] prose prose-slate max-w-none prose-sm prose-indigo prose-p:my-0 prose-ul:my-1 prose-li:my-0 prose-headings:my-1">
+                                    <div className="text-[15px] sm:text-[16px] prose prose-slate max-w-none prose-p:my-0 prose-ul:my-1 prose-li:my-0 prose-headings:my-1">
                                         {m.content ? (
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {m.content}
@@ -344,7 +346,7 @@ export function FrontierLayout() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-6 border-t border-slate-100 bg-white/50 backdrop-blur-md shrink-0">
+                <div className="p-3 sm:p-6 border-t border-slate-100 bg-white/50 backdrop-blur-md shrink-0 w-full">
                     <div className="max-w-3xl mx-auto relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-2xl blur opacity-0 group-focus-within:opacity-10 transition duration-500" />
                         <div className="relative bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden focus-within:border-indigo-400/50 transition-colors">
