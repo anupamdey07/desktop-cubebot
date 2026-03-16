@@ -12,7 +12,6 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     provider: 'ollama',
     gatewayUrl: 'https://cubebot-ubuntu.tailc63e0c.ts.net:10000',
     gatewayKey: 'sk-jetson-master-key-1234',
-    whisperUrl: 'https://cubebot-ubuntu.tailc63e0c.ts.net:8082',
     model: 'ollama-local',
     systemPrompt: SUPER_PROMPT,
     temperature: 0.7,
@@ -23,7 +22,6 @@ const DEFAULT_SETTINGS: CubeBotSettings = {
     voicePitch: 0.4,
     voiceRate: 1.2,
     sttLang: 'en-US',
-    sttMode: 'browser',
     isUnhinged: false,
     karakeepUrl: 'https://cubebot-ubuntu.tailc63e0c.ts.net',
     karakeepApiKey: '', // Set via Settings panel — stored in localStorage, not in code
@@ -184,10 +182,6 @@ export const useChatStore = create<ChatStore>()(
                 if (!validModels.includes(state.settings.model)) {
                     state.settings.model = 'ollama-local'
                     state.settings.provider = 'ollama'
-                }
-
-                if (!state.settings.sttMode) {
-                    state.settings.sttMode = 'whisper'
                 }
             },
         }

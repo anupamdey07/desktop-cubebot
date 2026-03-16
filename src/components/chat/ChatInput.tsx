@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, StopCircle, Mic, MicOff, Volume2, Loader2 } from 'lucide-react'
 import {
     isSTTSupported,
-    startWhisperListening,
-    stopWhisperListening,
     startListening,
     stopListening,
     isTTSSupported,
@@ -83,15 +81,11 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
 
     const handleMicToggle = () => {
         if (isListening) {
-            if (settings.sttMode === 'whisper') stopWhisperListening()
-            else stopListening()
+            stopListening()
             return
         }
 
         unlockSpeech()
-        // For whisper, show processing spinner until recording starts
-        // For web speech, onRecordingStateChange fires synchronously so no spinner needed
-        if (settings.sttMode === 'whisper') setIsProcessing(true)
         
         const callbacks = {
             onResult: (transcript: string) => {
@@ -128,15 +122,10 @@ export function ChatInput({ onSend, onStop, isStreaming, disabled }: ChatInputPr
             onRecordingStateChange: (recording: boolean) => {
                 setIsListening(recording)
                 if (recording) setIsProcessing(false)
-                else if (settings.sttMode === 'whisper') setIsProcessing(true)
             }
         }
 
-        if (settings.sttMode === 'whisper') {
-            startWhisperListening(callbacks, settings)
-        } else {
-            startListening(callbacks, settings.sttLang)
-        }
+        startListening(callbacks, settings.sttLang)
     }
 
     const handleStopSpeaking = () => {

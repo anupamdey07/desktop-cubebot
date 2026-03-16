@@ -166,83 +166,9 @@ type ListenCallback = {
 }
 
 let recognitionInstance: any = null
-let mediaRecorder: MediaRecorder | null = null
-let audioChunks: Blob[] = []
 
 export function isSTTSupported(): boolean {
-    return true // We now support Whisper as long as mediaDevices are available
-}
-
-/**
- * Modern Local Whisper STT (v6)
- * Uses MediaRecorder to capture audio and sends to Jetson on port 8082
- */
-export async function startWhisperListening(
-    callbacks: ListenCallback, 
-    settings: Pick<CubeBotSettings, 'whisperUrl' | 'sttLang'>
-) {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        mediaRecorder = new MediaRecorder(stream)
-        audioChunks = []
-
-        mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data)
-        }
-
-        mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
-            callbacks.onRecordingStateChange?.(false)
-
-            try {
-                // Prepare form data for OpenAI-compatible transcription endpoint
-                const formData = new FormData()
-                // Use the real blob but label it correctly for the server
-                formData.append('file', audioBlob, 'output.wav')
-                formData.append('model', 'whisper-1') 
-                formData.append('language', settings.sttLang.split('-')[0]) 
-                formData.append('response_format', 'json')
-
-                console.log(`[Whisper] Sending ${audioBlob.size} bytes to ${settings.whisperUrl}...`)
-                
-                const response = await fetch(`${settings.whisperUrl}/v1/audio/transcriptions`, {
-                    method: 'POST',
-                    body: formData
-                })
-
-                if (!response.ok) {
-                    const errorText = await response.text().catch(() => 'No error body')
-                    throw new Error(`Whisper ${response.status}: ${errorText}`)
-                }
-                
-                const data = await response.json()
-                console.log('[Whisper] Result:', data)
-                if (data.text) {
-                    callbacks.onResult(data.text)
-                }
-            } catch (err: any) {
-                callbacks.onError(`Whisper transcription failed: ${err.message}`)
-            } finally {
-                callbacks.onEnd()
-                // Stop all tracks to release the microphone
-                stream.getTracks().forEach(track => track.stop())
-            }
-        }
-
-        if (mediaRecorder) {
-            mediaRecorder.start()
-            console.log('[Whisper] Recording started...')
-            callbacks.onRecordingStateChange?.(true)
-        }
-    } catch (err: any) {
-        callbacks.onError(`Mic access failed: ${err.message}`)
-    }
-}
-
-export function stopWhisperListening() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop()
-    }
+    return !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
 }
 
 /**
